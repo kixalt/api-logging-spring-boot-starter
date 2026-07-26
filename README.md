@@ -53,7 +53,21 @@ The project relies notably on:
 
 - `spring-boot-starter-webmvc`
 - `spring-boot-starter-restclient`
-- Lombok
+
+### Via JitPack
+
+To use this library in your project, add JitPack to your `settings.gradle` (or `build.gradle` for older Gradle versions) and then add the dependency:
+
+```gradle
+// build.gradle
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    implementation 'com.github.kixalt:api-logging-spring-boot-starter:1.0.0' // Replace with your desired version/tag
+}
+```
 
 ## Configuration 💻
 
