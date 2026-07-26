@@ -33,11 +33,6 @@ dependencies {
 }
 
 
-tasks.named('test') {
-    useJUnitPlatform()
-    useJUnitPlatform()
-}
-
 jar {
     enabled = true
     archiveClassifier = ''
