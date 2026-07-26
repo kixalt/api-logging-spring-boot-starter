@@ -32,6 +32,17 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
+
+tasks.named('test') {
+    useJUnitPlatform()
+    useJUnitPlatform()
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
 bootJar {
     enabled = false
 }
@@ -49,16 +60,6 @@ publishing {
                         fromResolutionOf('runtimeClasspath')
                     }
                 }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/kixalt/api-logging-spring-boot-starter")
-			credentials {
-				username = project.properties.githubUsername
-				password = project.properties.githubToken
             }
         }
     }
