@@ -1,0 +1,37 @@
+name: Code Coverage
+
+on:
+  push:
+    branches:
+      - feature/github # Ou votre branche principale, ex: master
+  pull_request:
+    branches:
+      - main # Ou votre branche principale
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25' # Assurez-vous que cela correspond à votre version Java
+        distribution: 'temurin'
+        cache: 'gradle'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle and run tests
+      run: ./gradlew test jacocoTestReport
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        # token: ${{ secrets.CODECOV_TOKEN }} # Nécessaire pour les dépôts privés, optionnel pour les publics
+        files: ./build/reports/jacoco/test/jacocoTestReport.xml # Chemin vers votre rapport JaCoCo XML
+        flags: unittests # Optionnel: ajoute un flag pour identifier ce rapport
+        name: codecov-api-logging-spring-boot-starter # Optionnel: nom du rapport dans Codecov
+        fail_ci_if_error: true # Optionnel: échoue la CI si l'upload Codecov échoue
