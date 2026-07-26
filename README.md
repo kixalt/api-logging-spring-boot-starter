@@ -1,6 +1,8 @@
 # api-logging-spring-boot-starter 🚀
 Spring Boot Starter to centralize HTTP logging:
 
+[![codecov](https://codecov.io/github/kixalt/api-logging-spring-boot-starter/branch/main/graph/badge.svg?token=HH1TFGK3CV)](https://codecov.io/github/kixalt/api-logging-spring-boot-starter)
+
 - **Inbound** for Spring MVC, with opt-in via annotation on endpoints; ➡️
 - **Outbound** for `RestClient`, with interception of external calls; ⬅️
 - **Anonymization** of sensitive headers and fields in bodies. 🔒
