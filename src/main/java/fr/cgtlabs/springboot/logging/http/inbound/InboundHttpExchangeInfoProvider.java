@@ -56,7 +56,7 @@ public class InboundHttpExchangeInfoProvider implements HttpExchangeInfoProvider
         try {
             return HttpMethod.valueOf(request.getMethod());
         } catch (IllegalArgumentException e) {
-            return null; // Ou gérer l'erreur différemment si nécessaire
+            return null;
         }
     }
 
@@ -65,7 +65,7 @@ public class InboundHttpExchangeInfoProvider implements HttpExchangeInfoProvider
         try {
             return new URI(buildRequestUri(request));
         } catch (URISyntaxException e) {
-            return null; // Ou gérer l'erreur différemment si nécessaire
+            return null;
         }
     }
 
@@ -92,7 +92,7 @@ public class InboundHttpExchangeInfoProvider implements HttpExchangeInfoProvider
 
     @Override
     public HttpHeaders getResponseHeaders() {
-        HttpHeaders headers = new HttpHeaders();
+        var headers = new HttpHeaders();
         response.getHeaderNames().forEach(headerName -> headers.addAll(headerName, List.copyOf(response.getHeaders(headerName))));
         return headers;
     }

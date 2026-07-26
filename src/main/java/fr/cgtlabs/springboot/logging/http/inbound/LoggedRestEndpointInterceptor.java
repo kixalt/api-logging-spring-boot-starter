@@ -8,29 +8,29 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * Interceptor Spring MVC chargé d'identifier les méthodes de contrôleur REST
- * explicitement annotées avec {@link LoggedRestEndpoint}.
+ * Spring MVC interceptor responsible for identifying REST controller methods
+ * explicitly annotated with {@link LoggedRestEndpoint}.
  * <p>
- * Lorsqu'une méthode annotée est détectée, l'interceptor pose dans la requête
- * les attributs techniques nécessaires au filtre de logging HTTP entrant :
- * activation du logging, instant de départ et signature du handler.
+ * When an annotated method is detected, the interceptor sets the necessary
+ * technical attributes in the request for the inbound HTTP logging filter:
+ * logging activation, start time, and handler signature.
  * </p>
  */
 public class LoggedRestEndpointInterceptor implements HandlerInterceptor {
 
     /**
-     * Détecte si le handler MVC ciblé correspond à une méthode annotée avec
-     * {@link LoggedRestEndpoint} et, le cas échéant, enrichit la requête avec les
-     * attributs nécessaires au logging HTTP entrant.
+     * Detects if the targeted MVC handler corresponds to a method annotated with
+     * {@link LoggedRestEndpoint} and, if so, enriches the request with the
+     * attributes necessary for inbound HTTP logging.
      * <p>
-     * Aucun blocage n'est appliqué : cette méthode retourne toujours {@code true}
-     * afin de laisser la chaîne MVC se poursuivre normalement.
+     * No blocking is applied: this method always returns {@code true}
+     * to allow the MVC chain to proceed normally.
      * </p>
      *
-     * @param request requête HTTP entrante
-     * @param response réponse HTTP courante
-     * @param handler handler Spring MVC résolu pour la requête
-     * @return toujours {@code true}
+     * @param request incoming HTTP request
+     * @param response current HTTP response
+     * @param handler Spring MVC handler resolved for the request
+     * @return always {@code true}
      */
     @Override
     public boolean preHandle(
@@ -47,11 +47,11 @@ public class LoggedRestEndpointInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * Construit une signature lisible du handler Spring MVC ciblé sous la forme
-     * {@code NomControleur#nomMethode}.
+     * Builds a readable signature of the targeted Spring MVC handler in the format
+     * {@code ControllerName#methodName}.
      *
-     * @param handlerMethod méthode Spring MVC résolue
-     * @return signature textuelle du handler
+     * @param handlerMethod resolved Spring MVC method
+     * @return textual signature of the handler
      */
     private String buildHandlerSignature(HandlerMethod handlerMethod) {
         return handlerMethod.getBeanType().getSimpleName() + "#" + handlerMethod.getMethod().getName();

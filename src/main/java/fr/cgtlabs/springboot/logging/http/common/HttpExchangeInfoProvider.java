@@ -8,82 +8,82 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Interface pour fournir des informations sur un échange HTTP (requête/réponse)
- * de manière agnostique, qu'il soit entrant ou sortant.
+ * Interface for providing information about an HTTP exchange (request/response)
+ * in an agnostic way, whether it is inbound or outbound.
  */
 public interface HttpExchangeInfoProvider {
 
     /**
-     * Retourne la direction de l'échange HTTP (INBOUND ou OUTBOUND).
-     * @return La direction de l'échange.
+     * Returns the direction of the HTTP exchange (INBOUND or OUTBOUND).
+     * @return The direction of the exchange.
      */
     Direction getDirection();
 
     /**
-     * Retourne un descripteur de l'échange, qui peut être la signature du handler
-     * pour une requête entrante ou le nom de l'appelant pour une requête sortante.
-     * @return Le descripteur de l'échange.
+     * Returns a descriptor of the exchange, which can be the handler's signature
+     * for an inbound request or the caller's name for an outbound request.
+     * @return The exchange descriptor.
      */
     String getExchangeDescriptor();
 
     /**
-     * Retourne la méthode HTTP de la requête.
-     * @return La méthode HTTP.
+     * Returns the HTTP method of the request.
+     * @return The HTTP method.
      */
     HttpMethod getHttpMethod();
 
     /**
-     * Retourne l'URI de la requête.
-     * @return L'URI.
+     * Returns the URI of the request.
+     * @return The URI.
      */
     URI getUri();
 
     /**
-     * Retourne les en-têtes de la requête.
-     * @return Les en-têtes de la requête.
+     * Returns the request headers.
+     * @return The request headers.
      */
     HttpHeaders getRequestHeaders();
 
     /**
-     * Retourne le corps de la requête sous forme de tableau d'octets.
-     * @return Le corps de la requête.
+     * Returns the request body as a byte array.
+     * @return The request body.
      */
     byte[] getRequestBody();
 
     /**
-     * Retourne le code de statut HTTP de la réponse.
-     * @return Le code de statut.
+     * Returns the HTTP status code of the response.
+     * @return The status code.
      */
     int getResponseStatus();
 
     /**
-     * Retourne les en-têtes de la réponse.
-     * @return Les en-têtes de la réponse.
+     * Returns the response headers.
+     * @return The response headers.
      */
     HttpHeaders getResponseHeaders();
 
     /**
-     * Retourne le corps de la réponse sous forme de tableau d'octets.
-     * @return Le corps de la réponse.
-     * @throws IOException En cas d'erreur lors de la lecture du corps.
+     * Returns the response body as a byte array.
+     * @return The response body.
+     * @throws IOException If an error occurs while reading the body.
      */
     byte[] getResponseBody() throws IOException;
 
     /**
-     * Retourne le temps écoulé pour l'échange en millisecondes.
-     * @return Le temps écoulé.
+     * Returns the elapsed time for the exchange in milliseconds.
+     * @return The elapsed time.
      */
     long getElapsedTime();
 
     /**
-     * Retourne le type de contenu de la requête.
-     * @return Le type de contenu de la requête.
+     * Returns the content type of the request.
+     * @return The content type of the request.
      */
     MediaType getRequestContentType();
 
     /**
-     * Retourne le type de contenu de la réponse.
-     * @return Le type de contenu de la réponse.
+     * Returns the content type of the response.
+     * @return The content type of the response.
      */
     MediaType getResponseContentType();
 }

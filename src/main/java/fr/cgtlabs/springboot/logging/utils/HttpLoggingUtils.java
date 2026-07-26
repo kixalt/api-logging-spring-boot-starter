@@ -13,12 +13,12 @@ import org.springframework.http.MediaType;
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 
 /**
- * Utilitaires partagés de logging HTTP.
+ * Shared HTTP logging utilities.
  * <p>
- * Cette classe factorise la logique commune de journalisation entre les appels
- * HTTP sortants et les appels HTTP entrants : détermination des types de contenu
- * loggables, extraction d'un body textuel tronqué, anonymisation des headers et
- * des champs sensibles présents dans les payloads.
+ * This class centralizes common logging logic for both outbound
+ * and inbound HTTP calls: determining loggable content types,
+ * extracting a truncated textual body, and anonymizing sensitive headers
+ * and fields present in payloads.
  * </p>
  */
 public final class HttpLoggingUtils {
@@ -28,10 +28,10 @@ public final class HttpLoggingUtils {
     }
 
     /**
-     * Indique si un type de contenu peut être journalisé comme texte.
+     * Indicates whether a content type can be logged as text.
      *
-     * @param contentType type de contenu HTTP à évaluer
-     * @return {@code true} si le contenu est textuel/loggable, {@code false} sinon
+     * @param contentType HTTP content type to evaluate
+     * @return {@code true} if the content is textual/loggable, {@code false} otherwise
      */
     public static boolean isLoggableContentType(MediaType contentType) {
         return contentType != null && (contentType.isCompatibleWith(MediaType.APPLICATION_JSON)
@@ -42,14 +42,14 @@ public final class HttpLoggingUtils {
     }
 
     /**
-     * Convertit un corps binaire en texte, applique l'anonymisation puis tronque le
-     * résultat si la taille maximale de log est dépassée.
+     * Converts a binary body to text, applies anonymization, then truncates the
+     * result if the maximum log size is exceeded.
      *
-     * @param body corps HTTP sous forme d'octets
-     * @param contentType type de contenu HTTP
-     * @param maxBodyLogBytes taille maximale de body conservée pour le logging
-     * @param anonymizeProperties propriétés d'anonymisation
-     * @return corps converti, anonymisé et éventuellement tronqué
+     * @param body HTTP body as bytes
+     * @param contentType HTTP content type
+     * @param maxBodyLogBytes maximum body size retained for logging
+     * @param anonymizeProperties anonymization properties
+     * @return converted, anonymized, and potentially truncated body
      */
     public static String extractTextBody(byte[] body, MediaType contentType, int maxBodyLogBytes, AnonymizeProperties anonymizeProperties) {
         boolean truncated = body.length > maxBodyLogBytes;
@@ -59,16 +59,16 @@ public final class HttpLoggingUtils {
         var rawBody = new String(body, 0, limit, charset);
         var maskedBody = maskBody(rawBody, anonymizeProperties);
 
-        return truncated ? maskedBody + " [tronqué à %d Ko]".formatted(maxBodyLogBytes / 1024) : maskedBody;
+        return truncated ? maskedBody + " [truncated to %d KB]".formatted(maxBodyLogBytes / 1024) : maskedBody;
     }
 
     /**
-     * Construit une représentation textuelle multiligne des en-têtes HTTP
-     * en appliquant l'anonymisation configurée.
+     * Builds a multi-line textual representation of HTTP headers
+     * by applying the configured anonymization.
      *
-     * @param headers les en-têtes HTTP à journaliser
-     * @param anonymizeProperties propriétés d'anonymisation
-     * @return chaîne multiligne représentant les en-têtes
+     * @param headers HTTP headers to log
+     * @param anonymizeProperties anonymization properties
+     * @return multi-line string representing the headers
      */
     public static List<String> buildHeadersLog(HttpHeaders headers, AnonymizeProperties anonymizeProperties) {
         var toMask = Arrays.stream(anonymizeProperties.getHeaders()).filter(Objects::nonNull).map(String::toLowerCase).toList();
@@ -83,11 +83,11 @@ public final class HttpLoggingUtils {
     }
 
     /**
-     * Masque les champs sensibles configurés dans un corps textuel.
+     * Masks configured sensitive fields in a textual body.
      *
-     * @param body corps textuel à anonymiser
-     * @param anonymizeProperties propriétés d'anonymisation
-     * @return corps anonymisé, ou la valeur d'origine si aucun masquage ne s'applique
+     * @param body textual body to anonymize
+     * @param anonymizeProperties anonymization properties
+     * @return anonymized body, or the original value if no masking applies
      */
     public static String maskBody(String body, AnonymizeProperties anonymizeProperties) {
         if (body != null && !body.isBlank()) {
@@ -101,11 +101,11 @@ public final class HttpLoggingUtils {
     }
 
     /**
-     * Tente de parser une valeur brute d'en-tête {@code Content-Type} en
-     * {@link MediaType} Spring.
+     * Attempts to parse a raw {@code Content-Type} header value into
+     * a Spring {@link MediaType}.
      *
-     * @param contentType valeur brute du type de contenu
-     * @return type de contenu parsé, ou {@code null} si la valeur est absente ou invalide
+     * @param contentType raw content type value
+     * @return parsed content type, or {@code null} if the value is missing or invalid
      */
     public static MediaType parseMediaType(String contentType) {
         if (contentType != null && !contentType.isBlank()) {
@@ -120,11 +120,11 @@ public final class HttpLoggingUtils {
     }
 
     /**
-     * Construit l'expression régulière utilisée pour détecter les champs à masquer
-     * dans les corps textuels journalisés.
+     * Builds the regular expression used to detect fields to mask
+     * in logged textual bodies.
      *
-     * @param configuredFields noms de champs sensibles à cibler
-     * @return motif regex compilé
+     * @param configuredFields names of sensitive fields to target
+     * @return compiled regex pattern
      */
     public static Pattern buildBodyPattern(String[] configuredFields) {
         String fields = String.join("|", configuredFields);

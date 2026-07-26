@@ -7,11 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marque explicitement une méthode de contrôleur REST comme éligible au logging HTTP entrant.
+ * Explicitly marks a REST controller method as eligible for inbound HTTP logging.
  * <p>
- * Cette annotation est destinée à être utilisée sur des méthodes Spring MVC / REST afin de
- * déclencher le logging mutualisé des appels entrants, sous réserve que la requête ait déjà
- * été retenue par le filtre technique (par exemple via les paths protégés configurés).
+ * This annotation is intended to be used on Spring MVC / REST methods to
+ * trigger the centralized logging of inbound calls, provided that the request has already
+ * been selected by the technical filter (e.g., via configured protected paths).
  * </p>
  */
 @Documented

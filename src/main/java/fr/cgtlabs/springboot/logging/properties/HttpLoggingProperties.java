@@ -1,38 +1,38 @@
 package fr.cgtlabs.springboot.logging.properties;
 
 /**
- * Interface commune pour les propriétés de configuration de la journalisation HTTP.
- * Elle définit les méthodes pour accéder aux paramètres de logging partagés
- * entre la journalisation des requêtes entrantes et sortantes.
+ * Common interface for HTTP logging configuration properties.
+ * It defines methods to access logging parameters shared
+ * between inbound and outbound request logging.
  */
 public interface HttpLoggingProperties {
 
     /**
-     * Indique si les en-têtes HTTP doivent être journalisés.
+     * Indicates whether HTTP headers should be logged.
      *
-     * @return {@code true} si les en-têtes doivent être journalisés, {@code false} sinon.
+     * @return {@code true} if headers should be logged, {@code false} otherwise.
      */
     boolean isLogHeaders();
 
     /**
-     * Indique si le corps de la requête HTTP doit être journalisé.
+     * Indicates whether the HTTP request body should be logged.
      *
-     * @return {@code true} si le corps de la requête doit être journalisé, {@code false} sinon.
+     * @return {@code true} if the request body should be logged, {@code false} otherwise.
      */
     boolean isLogRequestBody();
 
     /**
-     * Indique si le corps de la réponse HTTP doit être journalisé.
+     * Indicates whether the HTTP response body should be logged.
      *
-     * @return {@code true} si le corps de la réponse doit être journalisé, {@code false} sinon.
+     * @return {@code true} if the response body should be logged, {@code false} otherwise.
      */
     boolean isLogResponseBody();
 
     /**
-     * Retourne la taille maximale en octets du corps de la requête ou de la réponse
-     * qui sera journalisée. Si le corps dépasse cette taille, il sera tronqué.
+     * Returns the maximum size in bytes of the request or response body
+     * that will be logged. If the body exceeds this size, it will be truncated.
      *
-     * @return La taille maximale du corps à journaliser en octets.
+     * @return The maximum size of the body to log in bytes.
      */
     int getMaxBodyLogBytes();
 }

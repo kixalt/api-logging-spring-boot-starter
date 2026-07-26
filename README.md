@@ -1,83 +1,63 @@
-# api-logging-spring-boot-starter
-Starter Spring Boot pour centraliser le logging HTTP :
+# api-logging-spring-boot-starter 🚀
+Spring Boot Starter to centralize HTTP logging:
 
-- **entrant** côté Spring MVC, avec opt-in par annotation sur les endpoints ;
-- **sortant** côté `RestClient`, avec interception des appels externes ;
-- **anonymisation** des headers et des champs sensibles dans les bodies.
+- **Inbound** for Spring MVC, with opt-in via annotation on endpoints; ➡️
+- **Outbound** for `RestClient`, with interception of external calls; ⬅️
+- **Anonymization** of sensitive headers and fields in bodies. 🔒
 
-## Fonctionnalités
+## Features ✨
 
-### Logging HTTP entrant
+### Inbound HTTP Logging ➡️
+This project provides a logging infrastructure for calls received by a Spring MVC application:
 
-Le projet fournit une infrastructure de logging pour les appels reçus par une application Spring MVC :
+- Activation via Spring Boot properties; ✅
+- Filtering by included paths (`includedPaths`);
+- Explicit annotation of methods to be logged with `@LoggedRestEndpoint`;
+- Logging of request and response in a single block per exchange;
+- Execution time measurement; ⏱️
+- Support for logging headers;
+- Support for logging request/response bodies;
+- Limitation of logged body size;
+- Anonymization of sensitive data. 🔒
 
-- activation via propriétés Spring Boot ;
-- filtrage par chemins inclus (`includedPaths`) ;
-- annotation explicite des méthodes à logger avec `@LoggedRestEndpoint` ;
-- logging de la requête et de la réponse dans un bloc unique par échange ;
-- mesure du temps d'exécution ;
-- support du logging des headers ;
-- support du logging des bodies requête/réponse ;
-- limitation de la taille des bodies loggés ;
-- anonymisation des données sensibles.
+### Outbound HTTP Logging ⬅️
+The project also exposes an interceptor for calls made with `RestClient`:
 
-Composants principaux :
+- Logging of HTTP method, URI, headers, and bodies;
+- Grouping of request and response in a single log block per exchange;
+- Execution time measurement; ⏱️
+- Anonymization of sensitive headers and fields; 🔒
+- Limitation of logged body size;
+- Support for common textual content types.
 
-- `ApiLoggingAutoConfiguration`
-- `InboundHttpLoggingFilter`
-- `LoggedRestEndpointInterceptor`
-- `InboundHttpLoggingMvcConfigurer`
-- `LoggedRestEndpoint`
-- `InboundHttpLoggingProperties`
-- `AnonymizeProperties`
+## Supported Content Types 📝
 
-### Logging HTTP sortant
-
-Le projet expose également un interceptor pour les appels réalisés avec `RestClient` :
-
-- logging de la méthode HTTP, de l'URI, des headers et des bodies ;
-- regroupement de la requête et de la réponse dans un bloc de log unique par échange ;
-- mesure du temps d'exécution ;
-- anonymisation des headers et des champs sensibles ;
-- limitation de la taille des bodies loggés ;
-- prise en charge des contenus textuels courants.
-
-Composants principaux :
-
-- `RestClientLoggingInterceptor`
-- `OutboundHttpLoggingProperties`
-- `AnonymizeProperties`
-
-## Types de contenu pris en charge
-
-Les bodies sont loggés en clair uniquement pour les contenus textuels/loggables :
+Bodies are logged in plain text only for textual/loggable content types:
 
 - `application/json`
 - `application/xml`
 - `application/x-www-form-urlencoded`
 - `text/*`
 
-Pour les contenus non textuels, le projet logge uniquement le type et la taille du payload.
+For non-textual content, the project only logs the content type and payload size.
 
-## Installation
+## Installation ⚙️
 
-### Prérequis
-
+### Prerequisites
 - Java **25**
 - Gradle
 - Spring Boot **4.1.0**
 
-### Dépendances principales
-
-Le projet s'appuie notamment sur :
+### Core Dependencies
+The project relies notably on:
 
 - `spring-boot-starter-webmvc`
 - `spring-boot-starter-restclient`
 - Lombok
 
-## Configuration
+## Configuration 💻
 
-### Logging entrant
+### Inbound Logging
 
 ```yaml application.yml
 logging:
@@ -91,7 +71,7 @@ logging:
     max-body-log-bytes: 10240
 ```
 
-### Anonymisation
+### Anonymization 🔒
 
 ```yaml application.yml
 logging:
@@ -108,7 +88,7 @@ logging:
     anonymized-string: "***"
 ```
 
-### Logging sortant
+### Outbound Logging
 
 ```yaml application.yml
 logging:
@@ -119,11 +99,11 @@ logging:
     max-body-log-bytes: 10240
 ```
 
-## Utilisation
+## Usage 💡
 
-### 1. Logger un endpoint REST entrant
+### 1. Log an Inbound REST Endpoint
 
-Annoter explicitement les méthodes Spring MVC à tracer :
+Explicitly annotate Spring MVC methods to be traced:
 
 ```java example
 import fr.cgtlabs.springboot.logging.http.inbound.LoggedRestEndpoint;
@@ -145,15 +125,15 @@ class UserController {
 }
 ```
 
-Notes :
+Notes:
 
-- le logging entrant ne s'active que si `logging.inbound.enabled=true` ;
-- au moins un chemin doit être présent dans `logging.inbound.included-paths` ;
-- seuls les endpoints annotés avec `@LoggedRestEndpoint` sont effectivement loggés.
+- Inbound logging is only activated if `logging.inbound.enabled=true`;
+- At least one path must be present in `logging.inbound.included-paths`;
+- Only endpoints annotated with `@LoggedRestEndpoint` are actually logged.
 
-### 2. Brancher le logging sortant sur un `RestClient`
+### 2. Connect Outbound Logging to a `RestClient`
 
-L'interceptor sortant est créé via `RestClientLoggingInterceptorFactory` afin d'associer explicitement un nom d'appelant à chaque client.
+The outbound interceptor is created via `RestClientLoggingInterceptorFactory` to explicitly associate a caller name with each client.
 
 ```java example
 import fr.cgtlabs.springboot.logging.http.outbound.RestClientLoggingInterceptorFactory;
@@ -174,89 +154,89 @@ class RestClientConfiguration {
 }
 ```
 
-## Exemple de logs produits
+## Example of Generated Logs 📊
 
-### Entrant
+### Inbound
 
 ```text logs
 ====================================================================================================
 [UserController#search] HTTP inbound
 ------------------------------------------------------------
-[UserController#search] → Requête entrante
+[UserController#search] → Inbound Request
   Handler  : UserController#search
-  Méthode  : POST
+  Method   : POST
   URI      : /api/users/search
   Headers  : Authorization: ***
-Content-Type: application/json
-[UserController#search] -> Body (requête, type=application/json :
+             Content-Type: application/json
+[UserController#search] -> Body (request, type=application/json :
 {"login":"john.doe","password":"***"}
 
 ------------------------------------------------------------
-[UserController#search] ← Réponse envoyée
+[UserController#search] ← Response Sent
   Handler  : UserController#search
-  Statut   : 200
-  Durée    : 18 ms
+  Status   : 200
+  Duration : 18 ms
   URI      : /api/users/search
-[UserController#search] -> Body (réponse, type=application/json :
+[UserController#search] -> Body (response, type=application/json :
 {"status":"ok","token":"***"}
 ====================================================================================================
 ```
 
-### Sortant
+### Outbound
 
 ```text logs
 ====================================================================================================
 [CustomerApiClient] HTTP outbound
 ------------------------------------------------------------
-[CustomerApiClient] → Requête sortante
-  Méthode  : POST
+[CustomerApiClient] → Outbound Request
+  Method   : POST
   URI      : https://example.test/customers
   Headers  : Authorization: ***
-Content-Type: application/json
-Body (requête, type=application/json :
+             Content-Type: application/json
+  Body (request, type=application/json :
 {"customerId":"12345","secret":"***"}
 
 ------------------------------------------------------------
-[CustomerApiClient] ← Réponse reçue
-  Statut   : 200
-  Durée    : 37 ms
+[CustomerApiClient] ← Response Received
+  Status   : 200
+  Duration : 37 ms
   URI      : https://example.test/customers
-Body (réponse, type=application/json :
+  Body (response, type=application/json :
 {"status":"ok","secret":"***"}
 ====================================================================================================
 ```
 
-## Auto-configuration
+## Auto-configuration ⚙️
 
-L'auto-configuration Spring Boot enregistre actuellement l'infrastructure de logging **entrant** via `ApiLoggingAutoConfiguration`.
+The Spring Boot auto-configuration currently registers the **inbound** logging infrastructure via `ApiLoggingAutoConfiguration`.
 
-Le fichier d'import Spring Boot est présent dans :
+The Spring Boot import file is located in:
 
 - `src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
 
-## Limites et points d'attention
+## Limitations and Considerations ⚠️
 
-- le masquage des bodies repose sur une regex ;
-- les bodies binaires ne sont pas affichés ;
-- les bodies volumineux sont tronqués ;
-- le logging entrant repose sur des wrappers `ContentCaching*` ;
-- le logging sortant lit le body de réponse pour le journaliser : ce point doit être validé selon votre usage ;
-- le logging entrant et sortant produit désormais un bloc unique par échange HTTP, ce qui améliore la lisibilité mais regroupe requête et réponse dans un même message.
+- Body masking relies on regex;
+- Binary bodies are not displayed;
+- Large bodies are truncated;
+- Inbound logging relies on `ContentCaching*` wrappers;
+- Outbound logging reads the response body for logging: this point should be validated according to your use case;
+- Inbound and outbound logging now produce a single block per HTTP exchange, which improves readability but groups request and response in the same message.
 
-## Tests
+## Tests ✅
 
-Le projet contient des tests ciblant les deux mécanismes :
+The project contains tests targeting both mechanisms:
 
 - `InboundHttpLoggingFilterTest`
 - `RestClientLoggingInterceptorTest`
 
-Lancer les tests :
+Run tests:
 
 ```sh
 ./gradlew test
 ```
 
-## Structure du projet
+## Project Structure 📁
 
 ```text
 src/main/java/fr/cgtlabs/springboot/logging/
@@ -267,11 +247,11 @@ src/main/java/fr/cgtlabs/springboot/logging/
 └── utils/
 ```
 
-## Résumé
+## Summary 🌟
 
-Ce starter fournit une base de logging HTTP réutilisable pour Spring Boot avec :
+This starter provides a reusable HTTP logging foundation for Spring Boot with:
 
-- un **logging entrant opt-in** pour les contrôleurs Spring MVC ;
-- un **logging sortant** pour `RestClient` ;
-- une **configuration centralisée** ;
-- une **anonymisation intégrée** pour limiter l'exposition des données sensibles.
+- **Opt-in inbound logging** for Spring MVC controllers;
+- **Outbound logging** for `RestClient`;
+- **Centralized configuration**;
+- **Integrated anonymization** to limit sensitive data exposure.

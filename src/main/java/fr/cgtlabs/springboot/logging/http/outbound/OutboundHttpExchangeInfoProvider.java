@@ -12,9 +12,9 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Implémentation de {@link HttpExchangeInfoProvider} pour les requêtes HTTP sortantes.
- * Cette classe extrait les informations nécessaires à la journalisation à partir
- * des objets {@link HttpRequest} et {@link ClientHttpResponse}.
+ * Implementation of {@link HttpExchangeInfoProvider} for outbound HTTP requests.
+ * This class extracts the necessary logging information from
+ * {@link HttpRequest} and {@link ClientHttpResponse} objects.
  */
 public class OutboundHttpExchangeInfoProvider implements HttpExchangeInfoProvider {
 
@@ -25,13 +25,13 @@ public class OutboundHttpExchangeInfoProvider implements HttpExchangeInfoProvide
     private final long elapsedTime;
 
     /**
-     * Construit une nouvelle instance de {@code OutboundHttpExchangeInfoProvider}.
+     * Constructs a new instance of {@code OutboundHttpExchangeInfoProvider}.
      *
-     * @param request     La requête HTTP sortante.
-     * @param requestBody Le corps de la requête sortante.
-     * @param response    La réponse HTTP reçue.
-     * @param callerName  Le nom de l'appelant.
-     * @param elapsedTime La durée de traitement de la requête en millisecondes.
+     * @param request     The outbound HTTP request.
+     * @param requestBody The body of the outbound request.
+     * @param response    The received HTTP response.
+     * @param callerName  The name of the caller.
+     * @param elapsedTime The processing time of the request in milliseconds.
      */
     public OutboundHttpExchangeInfoProvider(HttpRequest request, byte[] requestBody, ClientHttpResponse response, String callerName, long elapsedTime) {
         this.request = request;
@@ -76,7 +76,7 @@ public class OutboundHttpExchangeInfoProvider implements HttpExchangeInfoProvide
         try {
             return response.getStatusCode().value();
         } catch (IOException e) {
-            return -1; // Ou gérer l'erreur différemment
+            return -1;
         }
     }
 

@@ -15,27 +15,27 @@ import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties;
 import fr.cgtlabs.springboot.logging.http.service.HttpLoggingService;
 
 /**
- * Interceptor de logging des appels HTTP sortants effectués via {@code RestClient}.
+ * Interceptor for logging outbound HTTP calls made via {@code RestClient}.
  * <p>
- * Ce composant journalise les requêtes et réponses HTTP sortantes en y associant
- * un contexte appelant explicite ({@code callerName}) afin d'identifier le
- * composant métier ou technique à l'origine de l'appel.
+ * This component logs outbound HTTP requests and responses, associating them
+ * with an explicit calling context ({@code callerName}) to identify the
+ * business or technical component originating the call.
  * </p>
  * <p>
- * Il prend en charge :
+ * It supports:
  * </p>
  * <ul>
- *   <li>le logging des métadonnées de requête : méthode, URI, headers ;</li>
- *   <li>le logging des métadonnées de réponse : statut HTTP, durée, URI ;</li>
- *   <li>le logging optionnel des corps de requête et de réponse ;</li>
- *   <li>l'anonymisation des headers sensibles ;</li>
- *   <li>l'anonymisation de champs sensibles dans les payloads textuels ;</li>
- *   <li>la limitation de taille des bodies journalisés.</li>
+ *   <li>logging of request metadata: method, URI, headers;</li>
+ *   <li>logging of response metadata: HTTP status, duration, URI;</li>
+ *   <li>optional logging of request and response bodies;</li>
+ *   <li>anonymization of sensitive headers;</li>
+ *   <li>anonymization of sensitive fields in textual payloads;</li>
+ *   <li>size limitation of logged bodies.</li>
  * </ul>
  * <p>
- * Cette classe n'a pas vocation à être instanciée directement depuis l'extérieur
- * du package ; elle est destinée à être créée via une factory dédiée afin de
- * garantir la fourniture explicite du contexte appelant.
+ * This class is not intended to be instantiated directly from outside
+ * the package; it is designed to be created via a dedicated factory to
+ * ensure explicit provision of the calling context.
  * </p>
  */
 public class RestClientLoggingInterceptor implements ClientHttpRequestInterceptor {
@@ -47,14 +47,14 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
     private final HttpLoggingService httpLoggingService;
 
     /**
-     * Construit un interceptor de logging HTTP sortant associé à un appelant explicite.
+     * Constructs an outbound HTTP logging interceptor associated with an explicit caller.
      *
-     * @param callerName nom logique du composant à l'origine de l'appel HTTP
-     *                   (par exemple une classe métier, une façade ou un client externe)
-     * @param anonymizeProperties propriétés définissant les headers et champs de body
-     *                            à masquer dans les logs
-     * @param httpLoggingProperties propriétés pilotant le logging sortant
-     *                              (headers, bodies, taille maximale journalisée)
+     * @param callerName logical name of the component originating the HTTP call
+     *                   (e.g., a business class, a facade, or an external client)
+     * @param anonymizeProperties properties defining headers and body fields
+     *                            to be masked in logs
+     * @param httpLoggingProperties properties controlling outbound logging
+     *                              (headers, bodies, maximum logged size)
      */
     RestClientLoggingInterceptor(String callerName, AnonymizeProperties anonymizeProperties, OutboundHttpLoggingProperties httpLoggingProperties) {
         this.callerName = callerName;
@@ -62,26 +62,26 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
     }
 
     /**
-     * Intercepte une requête HTTP sortante exécutée via {@code RestClient}.
+     * Intercepts an outbound HTTP request executed via {@code RestClient}.
      * <p>
-     * Le traitement suit les étapes suivantes :
+     * The processing follows these steps:
      * </p>
      * <ol>
-     *   <li>journalisation de la requête sortante ;</li>
-     *   <li>exécution réelle de la requête ;</li>
-     *   <li>mesure du temps d'exécution ;</li>
-     *   <li>journalisation de la réponse reçue si celle-ci est disponible.</li>
+     *   <li>logging of the outbound request;</li>
+     *   <li>actual execution of the request;</li>
+     *   <li>measurement of execution time;</li>
+     *   <li>logging of the received response if available.</li>
      * </ol>
      * <p>
-     * En cas d'erreur d'entrée/sortie lors de l'exécution, l'exception est propagée
-     * telle quelle à l'appelant.
+     * In case of an I/O error during execution, the exception is propagated
+     * as is to the caller.
      * </p>
      *
-     * @param request requête HTTP sortante
-     * @param body corps de la requête sous forme binaire
-     * @param execution exécuteur fourni par Spring pour poursuivre la chaîne
-     * @return la réponse HTTP renvoyée par le serveur distant
-     * @throws IOException si une erreur d'entrée/sortie survient pendant l'appel HTTP
+     * @param request outbound HTTP request
+     * @param body request body as binary data
+     * @param execution executor provided by Spring to continue the chain
+     * @return the HTTP response returned by the remote server
+     * @throws IOException if an I/O error occurs during the HTTP call
      */
     @Override
     public ClientHttpResponse intercept(@NonNull HttpRequest request, byte @NonNull [] body, ClientHttpRequestExecution execution) throws IOException {

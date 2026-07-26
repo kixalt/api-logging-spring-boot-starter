@@ -5,3 +5,7 @@ logging:
     log-headers: true
     log-request-body: true
     log-response-body: true
+  anonymize:
+    body:
+    headers:
+      - authentication

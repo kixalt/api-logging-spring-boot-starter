@@ -24,18 +24,18 @@ import fr.cgtlabs.springboot.logging.properties.InboundHttpLoggingProperties;
 import fr.cgtlabs.springboot.logging.http.service.HttpLoggingService;
 
 /**
- * Filtre de journalisation HTTP entrant.
+ * Inbound HTTP logging filter.
  * <p>
- * Ce filtre intercepte les requêtes HTTP entrantes pour en journaliser les détails.
- * Il s'applique uniquement aux chemins d'accès (paths) configurés via {@link InboundHttpLoggingProperties#getIncludedPaths()}.
- * Pour permettre la lecture des corps de requête et de réponse, il enveloppe (wraps) les objets
- * {@link HttpServletRequest} et {@link HttpServletResponse} avec des versions "caching"
- * ({@link ContentCachingRequestWrapper} et {@link ContentCachingResponseWrapper}).
- * La journalisation complète de l'échange HTTP (requête et réponse) n'est effectuée
- * que si le point de terminaison (endpoint) ciblé a été explicitement marqué comme
- * journalisable par un intercepteur MVC, généralement via une annotation comme
- * {@code @LoggedRestEndpoint} (bien que l'annotation ne soit pas directement référencée ici,
- * le mécanisme est implicite via {@link InboundHttpLoggingAttributes#LOGGING_ENABLED}).
+ * This filter intercepts inbound HTTP requests to log their details.
+ * It only applies to paths configured via {@link InboundHttpLoggingProperties#getIncludedPaths()}.
+ * To allow reading request and response bodies, it wraps the
+ * {@link HttpServletRequest} and {@link HttpServletResponse} objects with "caching" versions
+ * ({@link ContentCachingRequestWrapper} and {@link ContentCachingResponseWrapper}).
+ * Full logging of the HTTP exchange (request and response) is only performed
+ * if the target endpoint has been explicitly marked as loggable
+ * by an MVC interceptor, typically via an annotation like
+ * {@code @LoggedRestEndpoint} (although the annotation is not directly referenced here,
+ * the mechanism is implicit via {@link InboundHttpLoggingAttributes#LOGGING_ENABLED}).
  * </p>
  */
 public class InboundHttpLoggingFilter extends OncePerRequestFilter {
@@ -49,10 +49,10 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     private final HttpLoggingService httpLoggingService;
 
     /**
-     * Construit une nouvelle instance du filtre de journalisation HTTP entrant.
+     * Constructs a new instance of the inbound HTTP logging filter.
      *
-     * @param properties          Les propriétés de configuration pour la journalisation HTTP entrante.
-     * @param anonymizeProperties Les propriétés de configuration pour l'anonymisation des données sensibles dans les logs.
+     * @param properties          The configuration properties for inbound HTTP logging.
+     * @param anonymizeProperties The configuration properties for anonymizing sensitive data in logs.
      */
     public InboundHttpLoggingFilter(InboundHttpLoggingProperties properties, AnonymizeProperties anonymizeProperties) {
         this.properties = properties;
@@ -60,13 +60,13 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Détermine si ce filtre doit être appliqué à la requête HTTP donnée.
-     * Le filtre est exclu si la fonctionnalité de journalisation est désactivée,
-     * ou si la liste des chemins inclus est vide, ou si le chemin de la requête
-     * ne correspond à aucun des motifs configurés dans {@link InboundHttpLoggingProperties#getIncludedPaths()}.
+     * Determines whether this filter should be applied to the given HTTP request.
+     * The filter is excluded if the logging feature is disabled,
+     * or if the list of included paths is empty, or if the request path
+     * does not match any of the patterns configured in {@link InboundHttpLoggingProperties#getIncludedPaths()}.
      *
-     * @param request La requête HTTP entrante.
-     * @return {@code true} si le filtre ne doit PAS s'appliquer à cette requête, {@code false} s'il DOIT s'appliquer.
+     * @param request The incoming HTTP request.
+     * @return {@code true} if the filter should NOT apply to this request, {@code false} if it SHOULD apply.
      */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
@@ -80,23 +80,23 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Intercepte la requête et la réponse pour permettre la journalisation.
-     * Cette méthode enveloppe la requête et la réponse avec des versions "caching"
-     * pour rendre leurs corps lisibles plusieurs fois. Elle exécute ensuite la
-     * chaîne de filtres et, si la requête a été marquée comme journalisable
-     * (par exemple, par un intercepteur MVC), elle déclenche la journalisation
-     * complète de l'échange HTTP.
+     * Intercepts the request and response to allow logging.
+     * This method wraps the request and response with "caching" versions
+     * to make their bodies readable multiple times. It then executes the
+     * filter chain and, if the request has been marked as loggable
+     * (e.g., by an MVC interceptor), it triggers the full logging
+     * of the HTTP exchange.
      * <p>
-     * Il est crucial que le corps de la réponse soit systématiquement recopié
-     * vers la réponse d'origine via {@link ContentCachingResponseWrapper#copyBodyToResponse()}
-     * dans le bloc {@code finally} pour s'assurer que le client reçoit la réponse.
+     * It is crucial that the response body is systematically copied
+     * to the original response via {@link ContentCachingResponseWrapper#copyBodyToResponse()}
+     * in the {@code finally} block to ensure the client receives the response.
      * </p>
      *
-     * @param request     La requête HTTP entrante.
-     * @param response    La réponse HTTP sortante.
-     * @param filterChain La chaîne de filtres servlet à exécuter.
-     * @throws ServletException Si une erreur spécifique au servlet se produit.
-     * @throws IOException      Si une erreur d'entrée/sortie se produit.
+     * @param request     The incoming HTTP request.
+     * @param response    The outgoing HTTP response.
+     * @param filterChain The servlet filter chain to execute.
+     * @throws ServletException If a servlet-specific error occurs.
+     * @throws IOException      If an input/output error occurs.
      */
     @Override
     protected void doFilterInternal(
@@ -114,14 +114,14 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Déclenche la journalisation de l'échange HTTP si la requête a été marquée comme
-     * journalisable (via {@link InboundHttpLoggingAttributes#LOGGING_ENABLED}).
-     * Indépendamment de la journalisation, cette méthode s'assure que le corps
-     * de la réponse est copié vers la réponse HTTP originale pour être envoyé au client.
+     * Triggers the logging of the HTTP exchange if the request has been marked as
+     * loggable (via {@link InboundHttpLoggingAttributes#LOGGING_ENABLED}).
+     * Regardless of logging, this method ensures that the response body
+     * is copied to the original HTTP response to be sent to the client.
      *
-     * @param request  La requête HTTP enveloppée (caching).
-     * @param response La réponse HTTP enveloppée (caching).
-     * @throws IOException Si une erreur d'entrée/sortie se produit lors de la copie du corps de la réponse.
+     * @param request  The wrapped (caching) HTTP request.
+     * @param response The wrapped (caching) HTTP response.
+     * @throws IOException If an input/output error occurs while copying the response body.
      */
     private void logAndCopyResponse(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response) throws IOException {
         try {
@@ -134,11 +134,11 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Résout le chemin de la requête au sein de l'application, en retirant le chemin de contexte
-     * si celui-ci est présent dans l'URI de la requête.
+     * Resolves the request path within the application, removing the context path
+     * if it is present in the request URI.
      *
-     * @param request La requête HTTP entrante.
-     * @return Le chemin de la requête relatif à l'application.
+     * @param request The incoming HTTP request.
+     * @return The request path relative to the application.
      */
     private String resolvePathWithinApplication(HttpServletRequest request) {
         var requestUri = request.getRequestURI();
@@ -150,12 +150,12 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Journalise l'échange HTTP complet (requête et réponse) si le niveau de journalisation
-     * INFO est activé. Cette méthode construit un message de log détaillé incluant
-     * les métadonnées de la requête et de la réponse, ainsi que leurs corps si configuré.
+     * Logs the complete HTTP exchange (request and response) if the INFO logging level
+     * is enabled. This method constructs a detailed log message including
+     * request and response metadata, as well as their bodies if configured.
      *
-     * @param request  La requête HTTP enveloppée avec le corps mis en cache.
-     * @param response La réponse HTTP enveloppée avec le corps mis en cache.
+     * @param request  The HTTP request wrapped with the cached body.
+     * @param response The HTTP response wrapped with the cached body.
      */
     private void logExchange(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response) throws IOException {
         if (LOG.isInfoEnabled()) {

@@ -4,26 +4,26 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Enregistre l'interceptor de logging HTTP entrant dans la chaîne Spring MVC.
+ * Registers the inbound HTTP logging interceptor in the Spring MVC chain.
  */
 public final class InboundHttpLoggingMvcConfigurer implements WebMvcConfigurer {
 
     private final LoggedRestEndpointInterceptor loggedRestEndpointInterceptor;
 
     /**
-     * Construit le configurer MVC chargé d'enregistrer l'interceptor de détection
-     * des endpoints REST à logger.
+     * Constructs the MVC configurer responsible for registering the interceptor
+     * for detecting REST endpoints to be logged.
      *
-     * @param loggedRestEndpointInterceptor interceptor MVC de détection des méthodes annotées
+     * @param loggedRestEndpointInterceptor MVC interceptor for detecting annotated methods
      */
     public InboundHttpLoggingMvcConfigurer(LoggedRestEndpointInterceptor loggedRestEndpointInterceptor) {
         this.loggedRestEndpointInterceptor = loggedRestEndpointInterceptor;
     }
 
     /**
-     * Enregistre l'interceptor de logging entrant dans le registre Spring MVC.
+     * Registers the inbound logging interceptor in the Spring MVC registry.
      *
-     * @param registry registre des interceptors MVC
+     * @param registry MVC interceptor registry
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
