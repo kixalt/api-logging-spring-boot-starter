@@ -1,4 +1,4 @@
-package fr.cgtlabs.springboot.logging.http.test;
+package fr.cgtlabs.springboot.logging.http;
 
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 import fr.cgtlabs.springboot.logging.properties.InboundHttpLoggingProperties;

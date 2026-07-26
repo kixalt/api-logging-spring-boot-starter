@@ -1,4 +1,4 @@
-package fr.cgtlabs.springboot.logging.http.test;
+package fr.cgtlabs.springboot.logging.http.inbound;
 
 import fr.cgtlabs.springboot.logging.http.inbound.LoggedRestEndpoint;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,4 @@
-package fr.cgtlabs.springboot.logging.http.test;
+package fr.cgtlabs.springboot.logging.http.inbound;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
-@ActiveProfiles("test") // Active le profil 'test' pour charger application-test.yml
+@ActiveProfiles("test")
 public class HttpLoggingIntegrationTest {
 
     @Autowired

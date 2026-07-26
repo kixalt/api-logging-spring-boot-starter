@@ -128,7 +128,7 @@ public final class HttpLoggingUtils {
      */
     public static Pattern buildBodyPattern(String[] configuredFields) {
         String fields = String.join("|", configuredFields);
-        String regex = "(?i)(\"(?:%s)\")\\s*:\\s*(?:\"[^\"]*\"|\\d+|true|false|null|\\[[^\\]]*\\])".formatted(fields);
+        String regex = "(?i)(\"(?:%s)\"\\s*:\\s*)(?:\"[^\"]*\"|\\d+|true|false|null|\\[[^\\]]*\\])".formatted(fields);
         return Pattern.compile(regex);
     }
 }
