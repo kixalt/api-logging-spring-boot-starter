@@ -58,7 +58,7 @@ The project relies notably on:
 
 ### Via JitPack
 
-To use this library in your project, add JitPack to your `settings.gradle` (or `build.gradle` for older Gradle versions) and then add the dependency:
+To use this library in your project, add JitPack to your `build.gradle` file and then add the dependency:
 
 ```gradle
 // build.gradle
