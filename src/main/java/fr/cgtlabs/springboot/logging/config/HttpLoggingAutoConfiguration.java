@@ -5,7 +5,9 @@ import fr.cgtlabs.springboot.logging.http.inbound.InboundHttpLoggingMvcConfigure
 import fr.cgtlabs.springboot.logging.http.inbound.LoggedRestEndpointInterceptor;
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 import fr.cgtlabs.springboot.logging.properties.InboundHttpLoggingProperties;
+import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties; // Import added
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties; // Import added
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 @ConditionalOnProperty(prefix = "logging.inbound", name = "enabled", havingValue = "true")
+@EnableConfigurationProperties({InboundHttpLoggingProperties.class, AnonymizeProperties.class, OutboundHttpLoggingProperties.class})
 public class HttpLoggingAutoConfiguration {
 
     /**

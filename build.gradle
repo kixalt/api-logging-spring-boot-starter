@@ -26,10 +26,20 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok:1.18.42'
 	compileOnly 'org.projectlombok:lombok:1.18.42'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
+    enabled = false
 }
 
 publishing {
@@ -45,16 +55,6 @@ publishing {
                         fromResolutionOf('runtimeClasspath')
                     }
                 }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/kixalt/api-logging-spring-boot-starter")
-			credentials {
-				username = project.properties.githubUsername
-				password = project.properties.githubToken
             }
         }
     }
