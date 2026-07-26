@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
@@ -65,48 +63,21 @@ public final class HttpLoggingUtils {
     }
 
     /**
-     * Construit une représentation textuelle multiligne des en-têtes d'une requête
-     * HTTP Spring en appliquant l'anonymisation configurée.
+     * Construit une représentation textuelle multiligne des en-têtes HTTP
+     * en appliquant l'anonymisation configurée.
      *
-     * @param request requête HTTP Spring contenant les en-têtes à journaliser
+     * @param headers les en-têtes HTTP à journaliser
      * @param anonymizeProperties propriétés d'anonymisation
      * @return chaîne multiligne représentant les en-têtes
      */
-    public static String buildHeadersLog(HttpRequest request, AnonymizeProperties anonymizeProperties) {
+    public static List<String> buildHeadersLog(HttpHeaders headers, AnonymizeProperties anonymizeProperties) {
         var toMask = Arrays.stream(anonymizeProperties.getHeaders()).filter(Objects::nonNull).map(String::toLowerCase).toList();
 
         var anonymizedHeaders = new ArrayList<String>();
-        request.getHeaders().forEach((name, values) -> values.forEach(val -> {
+        headers.forEach((name, values) -> values.forEach(val -> {
             boolean anonymize = toMask.contains(name.toLowerCase());
             anonymizedHeaders.add(name + ": " + (anonymize ? anonymizeProperties.getAnonymizedString() : val));
         }));
-
-        return String.join("\n", anonymizedHeaders);
-    }
-
-    /**
-     * Construit une représentation textuelle multiligne des en-têtes d'une requête
-     * servlet en appliquant l'anonymisation configurée.
-     *
-     * @param request requête servlet contenant les en-têtes à journaliser
-     * @param anonymizeProperties propriétés d'anonymisation
-     * @return chaîne multiligne représentant les en-têtes, ou un message indiquant
-     *         qu'aucun en-tête n'est présent
-     */
-    public static List<String> buildHeadersLog(HttpServletRequest request, AnonymizeProperties anonymizeProperties) {
-        var toMask = Arrays.stream(anonymizeProperties.getHeaders()).filter(Objects::nonNull).map(String::toLowerCase).toList();
-
-        List<String> anonymizedHeaders = new ArrayList<>();
-        var headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            var headerValues = request.getHeaders(headerName);
-            while (headerValues.hasMoreElements()) {
-                String headerValue = headerValues.nextElement();
-                boolean anonymize = toMask.contains(headerName.toLowerCase());
-                anonymizedHeaders.add(headerName + ": " + (anonymize ? anonymizeProperties.getAnonymizedString() : headerValue));
-            }
-        }
 
         return anonymizedHeaders;
     }

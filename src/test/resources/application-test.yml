@@ -1,0 +1,7 @@
+logging:
+  inbound:
+    enabled: true
+    included-paths: /test/**
+    log-headers: true
+    log-request-body: true
+    log-response-body: true

@@ -5,14 +5,12 @@ import java.util.List;
 
 import org.springframework.http.MediaType;
 
-import fr.cgtlabs.springboot.logging.http.outbound.Direction;
-
 /**
- * Builder dédié à la construction de blocs de logs représentant un échange HTTP
- * complet, entrant ou sortant.
+ * Builder dedicated to constructing log blocks representing a complete HTTP exchange,
+ * whether inbound or outbound.
  * <p>
- * Il centralise le formatage commun des sections, champs et bodies afin de
- * garantir un rendu homogène entre les composants de logging HTTP.
+ * It centralizes the common formatting of sections, fields, and bodies to
+ * ensure consistent rendering across HTTP logging components.
  * </p>
  */
 public final class HttpExchangeLogBuilder {
@@ -22,29 +20,30 @@ public final class HttpExchangeLogBuilder {
     private final List<String> lines = new ArrayList<>();
 
     /**
-     * Construit un builder de bloc de log HTTP.
-     * @param context contexte affiché dans le log (handler MVC, caller name, etc.)
+     * Constructs an HTTP log block builder.
+     * @param context context displayed in the log (MVC handler, caller name, etc.)
      */
     public HttpExchangeLogBuilder(String context) {
         this.context = context;
     }
 
     /**
-     * Démarre le bloc de log avec son en-tête commun.
+     * Adds a header line for the beginning of the log block.
      *
-     * @return builder courant
+     * @param headerLine The header line to add.
+     * @return current builder
      */
-    public HttpExchangeLogBuilder start(Direction direction) {
+    public HttpExchangeLogBuilder header(String headerLine) {
         lines.add("");
         lines.add(Constants.EXCHANGE_SEPARATOR);
-        lines.add("[%s] HTTP %s".formatted(context, direction));
+        lines.add(headerLine);
         return this;
     }
 
     /**
-     * Ajoute un séparateur de section.
+     * Adds a section separator.
      *
-     * @return builder courant
+     * @return current builder
      */
     public HttpExchangeLogBuilder sectionSeparator() {
         lines.add(Constants.SECTION_SEPARATOR);
@@ -52,9 +51,9 @@ public final class HttpExchangeLogBuilder {
     }
 
     /**
-     * Ajoute une ligne vide.
+     * Adds an empty line.
      *
-     * @return builder courant
+     * @return current builder
      */
     public HttpExchangeLogBuilder blankLine() {
         lines.add("");
@@ -62,22 +61,22 @@ public final class HttpExchangeLogBuilder {
     }
 
     /**
-     * Ajoute un titre de section préfixé par le contexte courant.
+     * Adds a section title to the log block.
      *
-     * @param title titre à afficher
-     * @return builder courant
+     * @param title title to display
+     * @return current builder
      */
     public HttpExchangeLogBuilder sectionTitle(String title) {
-        lines.add("[%s] %s".formatted(context, title));
+        lines.add(title);
         return this;
     }
 
     /**
-     * Ajoute un champ libellé/valeur au bloc de log.
+     * Adds a labeled field/value to the log block.
      *
-     * @param label libellé à afficher
-     * @param value valeur associée
-     * @return builder courant
+     * @param label label to display
+     * @param value associated value
+     * @return current builder
      */
     public HttpExchangeLogBuilder field(String label, Object value) {
         lines.add("  %-8s : %s".formatted(label, value));
@@ -85,12 +84,12 @@ public final class HttpExchangeLogBuilder {
     }
 
     /**
-     * Ajoute un body textuel journalisable au bloc de log.
+     * Adds a loggable textual body to the log block.
      *
-     * @param payloadLabel libellé fonctionnel du payload
-     * @param contentType type de contenu HTTP
-     * @param body corps formaté à afficher
-     * @return builder courant
+     * @param payloadLabel functional label of the payload
+     * @param contentType HTTP content type
+     * @param body formatted body to display
+     * @return current builder
      */
     public HttpExchangeLogBuilder body(String payloadLabel, MediaType contentType, String body) {
         lines.add("[%s] -> Body (%s, type=%s :".formatted(context, payloadLabel, contentType));
@@ -99,26 +98,25 @@ public final class HttpExchangeLogBuilder {
     }
 
     /**
-     * Ajoute une information de body ignoré au bloc de log.
+     * Adds ignored body information to the log block.
      *
-     * @param payloadLabel libellé fonctionnel du payload
-     * @param contentType type de contenu HTTP
-     * @param length taille du body en octets
-     * @return builder courant
+     * @param payloadLabel functional label of the payload
+     * @param contentType HTTP content type
+     * @param length body size in bytes
+     * @return current builder
      */
     public HttpExchangeLogBuilder ignoredBody(String payloadLabel, MediaType contentType, int length) {
-        lines.add("[%s] -> Body (Contenu de la %s ignoré, type=%s : taille=%s octets)"
-                .formatted(context, payloadLabel, contentType != null ? contentType : "inconnu", length));
+        lines.add("[%s] -> Body (Content of %s ignored, type=%s: size=%s bytes)"
+                .formatted(context, payloadLabel, contentType != null ? contentType : "unknown", length));
         return this;
     }
 
     /**
-     * Construit la chaîne finale représentant le bloc de log complet.
+     * Builds the final string representing the complete log block.
      *
-     * @return message final prêt à être journalisé
+     * @return final message ready to be logged
      */
     public String build() {
         return String.join("\n", lines) + "\n" + Constants.EXCHANGE_SEPARATOR;
     }
 }
-

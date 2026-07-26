@@ -6,15 +6,13 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRequest;
-import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties;
-import fr.cgtlabs.springboot.logging.utils.HttpExchangeLogBuilder;
-import fr.cgtlabs.springboot.logging.utils.HttpLoggingUtils;
+import fr.cgtlabs.springboot.logging.http.service.HttpLoggingService;
 
 /**
  * Interceptor de logging des appels HTTP sortants effectués via {@code RestClient}.
@@ -44,11 +42,9 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
 
     private static final Logger LOG = LoggerFactory.getLogger(RestClientLoggingInterceptor.class);
 
-    private final AnonymizeProperties anonymizeProperties;
-
-    private final OutboundHttpLoggingProperties httpLoggingProperties;
-
     private final String callerName;
+
+    private final HttpLoggingService httpLoggingService;
 
     /**
      * Construit un interceptor de logging HTTP sortant associé à un appelant explicite.
@@ -61,9 +57,8 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
      *                              (headers, bodies, taille maximale journalisée)
      */
     RestClientLoggingInterceptor(String callerName, AnonymizeProperties anonymizeProperties, OutboundHttpLoggingProperties httpLoggingProperties) {
-        this.anonymizeProperties = anonymizeProperties;
-        this.httpLoggingProperties = httpLoggingProperties;
         this.callerName = callerName;
+        this.httpLoggingService = new HttpLoggingService(httpLoggingProperties, anonymizeProperties);
     }
 
     /**
@@ -99,125 +94,9 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
         } finally {
             if (response != null && LOG.isInfoEnabled()) {
                 long elapsed = System.currentTimeMillis() - start;
-                String message = buildExchangeLog(request, body, response, elapsed);
-                LOG.info(message);
+                var infoProvider = new OutboundHttpExchangeInfoProvider(request, body, response, callerName, elapsed);
+                LOG.info(httpLoggingService.buildExchangeLog(infoProvider));
             }
         }
     }
-
-    /**
-     * Construit le log complet de l'échange HTTP sortant sous forme d'un bloc
-     * unique regroupant requête et réponse.
-     *
-     * @param request requête HTTP sortante
-     * @param requestBody corps brut de la requête
-     * @param response réponse HTTP reçue
-     * @param elapsed durée d'exécution en millisecondes
-     * @return message de log complet prêt à être journalisé
-     * @throws IOException si la lecture du corps de la réponse échoue
-     */
-    private String buildExchangeLog(HttpRequest request, byte[] requestBody, ClientHttpResponse response, long elapsed) throws IOException {
-        var builder = new HttpExchangeLogBuilder(callerName)
-                .start(Direction.OUTBOUND)
-                .sectionSeparator();
-
-        appendRequest(builder, request, requestBody);
-        builder.blankLine().sectionSeparator();
-        appendResponse(builder, response, request, elapsed);
-
-        return builder.build();
-    }
-
-    /**
-     * Ajoute au builder les métadonnées de la requête sortante puis,
-     * si activé, son corps lorsque celui-ci est présent.
-     *
-     * @param builder     builder de bloc de log HTTP
-     * @param request     requête HTTP sortante
-     * @param requestBody corps brut de la requête
-     */
-    private void appendRequest(HttpExchangeLogBuilder builder, HttpRequest request, byte[] requestBody) {
-        builder.sectionTitle("→ Requête sortante")
-                .field("Méthode", request.getMethod())
-                .field("URI", request.getURI())
-                .field("Headers", httpLoggingProperties.isLogHeaders() ? HttpLoggingUtils.buildHeadersLog(request, anonymizeProperties) : "[désactivé]");
-
-        appendRequestBody(builder, request, requestBody);
-    }
-
-    /**
-     * Ajoute au builder les métadonnées de la réponse HTTP reçue puis,
-     * si activé, son corps lorsque celui-ci est disponible.
-     *
-     * @param builder  builder de bloc de log HTTP
-     * @param response réponse HTTP reçue
-     * @param request  requête initiale associée
-     * @param elapsed  durée d'exécution en millisecondes
-     * @throws IOException si la lecture du corps de la réponse échoue
-     */
-    private void appendResponse(HttpExchangeLogBuilder builder, ClientHttpResponse response, HttpRequest request, long elapsed) throws IOException {
-        builder.sectionTitle("← Réponse reçue")
-                .field("Statut", response.getStatusCode().value())
-                .field("Durée", elapsed + " ms")
-                .field("URI", request.getURI());
-
-        appendResponseBody(builder, response);
-    }
-
-    /**
-     * Ajoute au builder le corps de la requête si l'option correspondante est activée
-     * et si le corps n'est pas vide.
-     *
-     * @param builder     builder de bloc de log HTTP
-     * @param request     requête HTTP sortante
-     * @param requestBody corps brut de la requête
-     */
-    private void appendRequestBody(HttpExchangeLogBuilder builder, HttpRequest request, byte[] requestBody) {
-        if (httpLoggingProperties.isLogRequestBody() && requestBody.length > 0) {
-            MediaType contentType = request.getHeaders().getContentType();
-            appendBody(builder, "requête", requestBody, contentType);
-        }
-    }
-
-    /**
-     * Ajoute au builder le corps de la réponse si l'option correspondante est activée
-     * et si le corps contient des données.
-     *
-     * @param builder  builder de bloc de log HTTP
-     * @param response réponse HTTP reçue
-     * @throws IOException si la lecture du flux de réponse échoue
-     */
-    private void appendResponseBody(HttpExchangeLogBuilder builder, ClientHttpResponse response) throws IOException {
-        if (httpLoggingProperties.isLogResponseBody()) {
-            byte[] responseBody = response.getBody().readAllBytes();
-            if (responseBody.length > 0) {
-                MediaType contentType = response.getHeaders().getContentType();
-                appendBody(builder, "réponse", responseBody, contentType);
-            }
-        }
-    }
-
-    /**
-     * Ajoute au builder un body HTTP en tenant compte de son type de contenu.
-     * <p>
-     * Si le contenu est considéré comme textuel/loggable, il est converti,
-     * anonymisé puis éventuellement tronqué avant ajout au bloc.
-     * Sinon, seules des métadonnées de type et de taille sont produites.
-     * </p>
-     *
-     * @param builder      builder de bloc de log HTTP
-     * @param payloadLabel libellé fonctionnel du payload journalisé
-     *                     ({@code requête} ou {@code réponse})
-     * @param body         contenu brut du body
-     * @param contentType  type de contenu HTTP associé
-     */
-    private void appendBody(HttpExchangeLogBuilder builder, String payloadLabel, byte[] body, MediaType contentType) {
-        if (HttpLoggingUtils.isLoggableContentType(contentType)) {
-            var formattedBody = HttpLoggingUtils.extractTextBody(body, contentType, httpLoggingProperties.getMaxBodyLogBytes(), anonymizeProperties);
-            builder.body(payloadLabel, contentType, formattedBody);
-        } else {
-            builder.ignoredBody(payloadLabel, contentType, body.length);
-        }
-    }
-
 }

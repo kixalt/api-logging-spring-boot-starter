@@ -3,6 +3,7 @@ package fr.cgtlabs.springboot.logging.http.inbound;
 import java.io.IOException;
 import java.util.Objects;
 
+import fr.cgtlabs.springboot.logging.http.common.HttpExchangeInfoProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -19,19 +19,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
-import fr.cgtlabs.springboot.logging.http.outbound.Direction;
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 import fr.cgtlabs.springboot.logging.properties.InboundHttpLoggingProperties;
-import fr.cgtlabs.springboot.logging.utils.HttpExchangeLogBuilder;
-import fr.cgtlabs.springboot.logging.utils.HttpLoggingUtils;
+import fr.cgtlabs.springboot.logging.http.service.HttpLoggingService;
 
 /**
- * Filtre de logging HTTP entrant.
+ * Filtre de journalisation HTTP entrant.
  * <p>
- * Le filtre ne s'applique qu'aux paths inclus dans la configuration. Il wrappe la requête et la
- * réponse afin de permettre la lecture des corps, puis ne journalise l'échange que si
- * l'interceptor MVC a explicitement marqué la requête comme loggable via
- * {@link LoggedRestEndpoint}.
+ * Ce filtre intercepte les requêtes HTTP entrantes pour en journaliser les détails.
+ * Il s'applique uniquement aux chemins d'accès (paths) configurés via {@link InboundHttpLoggingProperties#getIncludedPaths()}.
+ * Pour permettre la lecture des corps de requête et de réponse, il enveloppe (wraps) les objets
+ * {@link HttpServletRequest} et {@link HttpServletResponse} avec des versions "caching"
+ * ({@link ContentCachingRequestWrapper} et {@link ContentCachingResponseWrapper}).
+ * La journalisation complète de l'échange HTTP (requête et réponse) n'est effectuée
+ * que si le point de terminaison (endpoint) ciblé a été explicitement marqué comme
+ * journalisable par un intercepteur MVC, généralement via une annotation comme
+ * {@code @LoggedRestEndpoint} (bien que l'annotation ne soit pas directement référencée ici,
+ * le mécanisme est implicite via {@link InboundHttpLoggingAttributes#LOGGING_ENABLED}).
  * </p>
  */
 public class InboundHttpLoggingFilter extends OncePerRequestFilter {
@@ -40,27 +44,29 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
 
     private final InboundHttpLoggingProperties properties;
 
-    private final AnonymizeProperties anonymizeProperties;
-
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+    private final HttpLoggingService httpLoggingService;
+
     /**
-     * Construit le filtre de logging HTTP entrant.
+     * Construit une nouvelle instance du filtre de journalisation HTTP entrant.
      *
-     * @param properties          propriétés de pilotage du logging entrant
-     * @param anonymizeProperties propriétés de masquage des données sensibles
+     * @param properties          Les propriétés de configuration pour la journalisation HTTP entrante.
+     * @param anonymizeProperties Les propriétés de configuration pour l'anonymisation des données sensibles dans les logs.
      */
     public InboundHttpLoggingFilter(InboundHttpLoggingProperties properties, AnonymizeProperties anonymizeProperties) {
         this.properties = properties;
-        this.anonymizeProperties = anonymizeProperties;
+        this.httpLoggingService = new HttpLoggingService(properties, anonymizeProperties);
     }
 
     /**
-     * Détermine si la requête doit être exclue du filtre selon l'activation globale
-     * de la fonctionnalité et la liste des paths inclus configurés.
+     * Détermine si ce filtre doit être appliqué à la requête HTTP donnée.
+     * Le filtre est exclu si la fonctionnalité de journalisation est désactivée,
+     * ou si la liste des chemins inclus est vide, ou si le chemin de la requête
+     * ne correspond à aucun des motifs configurés dans {@link InboundHttpLoggingProperties#getIncludedPaths()}.
      *
-     * @param request requête HTTP entrante
-     * @return {@code true} si le filtre ne doit pas s'appliquer, {@code false} sinon
+     * @param request La requête HTTP entrante.
+     * @return {@code true} si le filtre ne doit PAS s'appliquer à cette requête, {@code false} s'il DOIT s'appliquer.
      */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
@@ -74,19 +80,23 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Wrappe la requête et la réponse afin de mettre en cache leurs corps, exécute
-     * la chaîne de filtres puis déclenche le logging final si l'interceptor MVC a
-     * explicitement marqué la requête comme loggable.
+     * Intercepte la requête et la réponse pour permettre la journalisation.
+     * Cette méthode enveloppe la requête et la réponse avec des versions "caching"
+     * pour rendre leurs corps lisibles plusieurs fois. Elle exécute ensuite la
+     * chaîne de filtres et, si la requête a été marquée comme journalisable
+     * (par exemple, par un intercepteur MVC), elle déclenche la journalisation
+     * complète de l'échange HTTP.
      * <p>
-     * Le corps de la réponse est systématiquement recopié vers la réponse d'origine
-     * via {@link ContentCachingResponseWrapper#copyBodyToResponse()}.
+     * Il est crucial que le corps de la réponse soit systématiquement recopié
+     * vers la réponse d'origine via {@link ContentCachingResponseWrapper#copyBodyToResponse()}
+     * dans le bloc {@code finally} pour s'assurer que le client reçoit la réponse.
      * </p>
      *
-     * @param request     requête HTTP entrante
-     * @param response    réponse HTTP sortante
-     * @param filterChain chaîne de filtres servlet
-     * @throws ServletException en cas d'erreur servlet
-     * @throws IOException      en cas d'erreur d'entrée/sortie
+     * @param request     La requête HTTP entrante.
+     * @param response    La réponse HTTP sortante.
+     * @param filterChain La chaîne de filtres servlet à exécuter.
+     * @throws ServletException Si une erreur spécifique au servlet se produit.
+     * @throws IOException      Si une erreur d'entrée/sortie se produit.
      */
     @Override
     protected void doFilterInternal(
@@ -104,13 +114,14 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Déclenche le logging final de l'échange si la requête a été marquée comme
-     * loggable, puis recopie systématiquement le corps de la réponse vers la réponse
-     * d'origine.
+     * Déclenche la journalisation de l'échange HTTP si la requête a été marquée comme
+     * journalisable (via {@link InboundHttpLoggingAttributes#LOGGING_ENABLED}).
+     * Indépendamment de la journalisation, cette méthode s'assure que le corps
+     * de la réponse est copié vers la réponse HTTP originale pour être envoyé au client.
      *
-     * @param request  requête HTTP wrappée
-     * @param response réponse HTTP wrappée
-     * @throws IOException en cas d'erreur lors de la recopie de la réponse
+     * @param request  La requête HTTP enveloppée (caching).
+     * @param response La réponse HTTP enveloppée (caching).
+     * @throws IOException Si une erreur d'entrée/sortie se produit lors de la copie du corps de la réponse.
      */
     private void logAndCopyResponse(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response) throws IOException {
         try {
@@ -122,6 +133,13 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * Résout le chemin de la requête au sein de l'application, en retirant le chemin de contexte
+     * si celui-ci est présent dans l'URI de la requête.
+     *
+     * @param request La requête HTTP entrante.
+     * @return Le chemin de la requête relatif à l'application.
+     */
     private String resolvePathWithinApplication(HttpServletRequest request) {
         var requestUri = request.getRequestURI();
         var contextPath = request.getContextPath();
@@ -132,171 +150,20 @@ public class InboundHttpLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Journalise l'échange HTTP complet lorsque le niveau INFO est actif.
+     * Journalise l'échange HTTP complet (requête et réponse) si le niveau de journalisation
+     * INFO est activé. Cette méthode construit un message de log détaillé incluant
+     * les métadonnées de la requête et de la réponse, ainsi que leurs corps si configuré.
      *
-     * @param request  requête HTTP wrappée avec corps mis en cache
-     * @param response réponse HTTP wrappée avec corps mis en cache
+     * @param request  La requête HTTP enveloppée avec le corps mis en cache.
+     * @param response La réponse HTTP enveloppée avec le corps mis en cache.
      */
-    private void logExchange(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response) {
+    private void logExchange(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response) throws IOException {
         if (LOG.isInfoEnabled()) {
             var handlerSignature = String.valueOf(request.getAttribute(InboundHttpLoggingAttributes.HANDLER_SIGNATURE));
-            long elapsed = computeElapsed(request);
-            String message = buildExchangeLog(request, response, handlerSignature, elapsed);
-            LOG.info(message);
+            var infoProvider = new InboundHttpExchangeInfoProvider(request, response, handlerSignature);
+            LOG.info(httpLoggingService.buildExchangeLog(infoProvider));
         }
     }
 
-    /**
-     * Calcule la durée de traitement de la requête à partir de l'attribut technique
-     * posé par l'interceptor MVC.
-     *
-     * @param request requête HTTP courante
-     * @return durée écoulée en millisecondes, ou {@code -1} si l'instant de départ
-     * est absent
-     */
-    private long computeElapsed(HttpServletRequest request) {
-        Object startTime = request.getAttribute(InboundHttpLoggingAttributes.START_TIME);
-        if (startTime instanceof Long start) {
-            return System.currentTimeMillis() - start;
-        }
-        return -1L;
-    }
-
-    /**
-     * Construit le log complet de l'échange HTTP entrant sous forme d'un bloc
-     * unique regroupant la requête, la réponse et leurs éventuels bodies.
-     *
-     * @param request          requête HTTP wrappée
-     * @param response         réponse HTTP wrappée
-     * @param handlerSignature signature du handler MVC ciblé
-     * @param elapsed          durée d'exécution en millisecondes
-     * @return message de log complet prêt à être journalisé
-     */
-    private String buildExchangeLog(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response, String handlerSignature, long elapsed) {
-        String uri = buildRequestUri(request);
-        var builder = new HttpExchangeLogBuilder(handlerSignature)
-                .start(Direction.INBOUND)
-                .sectionSeparator();
-
-        appendRequest(builder, request, handlerSignature, uri);
-        builder.blankLine().sectionSeparator();
-        appendResponse(builder, response, handlerSignature, elapsed, uri);
-
-        return builder.build();
-    }
-
-    /**
-     * Ajoute au builder les métadonnées de la requête entrante puis,
-     * si activé, son corps lorsque celui-ci est présent.
-     *
-     * @param builder          builder de bloc de log HTTP
-     * @param request          requête HTTP wrappée
-     * @param handlerSignature signature du handler MVC ciblé
-     * @param uri              URI complète de la requête à journaliser
-     */
-    private void appendRequest(HttpExchangeLogBuilder builder, ContentCachingRequestWrapper request, String handlerSignature, String uri) {
-        builder.sectionTitle("→ Requête entrante")
-                .field("Handler", handlerSignature)
-                .field("Méthode", request.getMethod())
-                .field("URI", uri);
-        appendHeader(builder, request);
-        appendRequestBody(builder, request);
-    }
-
-    private void appendHeader(HttpExchangeLogBuilder builder, ContentCachingRequestWrapper request) {
-        if (properties.isLogHeaders()) {
-            var headersLines = HttpLoggingUtils.buildHeadersLog(request, anonymizeProperties);
-            builder.field("Headers", headersLines.isEmpty() ? "[aucun]" : headersLines.getFirst());
-            headersLines.stream()
-                    .skip(1)
-                    .forEach(value -> builder.field("      ", value));
-        } else {
-            builder.field("Headers", "[désactivé]");
-        }
-    }
-
-    /**
-     * Ajoute au builder les métadonnées de la réponse HTTP produite puis,
-     * si activé, son corps lorsque celui-ci est présent.
-     *
-     * @param builder          builder de bloc de log HTTP
-     * @param response         réponse HTTP wrappée
-     * @param handlerSignature signature du handler MVC ciblé
-     * @param elapsed          durée d'exécution en millisecondes
-     * @param uri              URI complète de la requête associée
-     */
-    private void appendResponse(HttpExchangeLogBuilder builder, ContentCachingResponseWrapper response, String handlerSignature, long elapsed, String uri) {
-        builder.sectionTitle("← Réponse envoyée")
-                .field("Handler", handlerSignature)
-                .field("Statut", response.getStatus())
-                .field("Durée", elapsed + " ms")
-                .field("URI", uri);
-
-        appendResponseBody(builder, response);
-    }
-
-    /**
-     * Ajoute au builder le body de la requête si l'option correspondante est
-     * activée et si le contenu peut être exploité pour le logging.
-     *
-     * @param builder builder de bloc de log HTTP
-     * @param request requête HTTP wrappée
-     */
-    private void appendRequestBody(HttpExchangeLogBuilder builder, ContentCachingRequestWrapper request) {
-        if (properties.isLogRequestBody()) {
-            byte[] requestBody = request.getContentAsByteArray();
-            if (requestBody.length > 0) {
-                MediaType contentType = HttpLoggingUtils.parseMediaType(request.getContentType());
-                appendBody(builder, "requête", requestBody, contentType);
-            }
-        }
-    }
-
-    /**
-     * Ajoute au builder le body de la réponse si l'option correspondante est
-     * activée et si le contenu peut être exploité pour le logging.
-     *
-     * @param builder  builder de bloc de log HTTP
-     * @param response réponse HTTP wrappée
-     */
-    private void appendResponseBody(HttpExchangeLogBuilder builder, ContentCachingResponseWrapper response) {
-        if (properties.isLogResponseBody()) {
-            byte[] responseBody = response.getContentAsByteArray();
-            if (responseBody.length > 0) {
-                MediaType contentType = HttpLoggingUtils.parseMediaType(response.getContentType());
-                appendBody(builder, "réponse", responseBody, contentType);
-            }
-        }
-    }
-
-    /**
-     * Ajoute au builder un body HTTP textuel si son type de contenu est loggable ;
-     * sinon, ajoute uniquement son type et sa taille.
-     *
-     * @param builder      builder de bloc de log HTTP
-     * @param payloadLabel libellé fonctionnel du payload journalisé
-     * @param body         contenu brut du body
-     * @param contentType  type de contenu HTTP
-     */
-    private void appendBody(HttpExchangeLogBuilder builder, String payloadLabel, byte[] body, MediaType contentType) {
-        if (HttpLoggingUtils.isLoggableContentType(contentType)) {
-            var formattedBody = HttpLoggingUtils.extractTextBody(body, contentType, properties.getMaxBodyLogBytes(), anonymizeProperties);
-            builder.body(payloadLabel, contentType, formattedBody);
-        } else {
-            builder.ignoredBody(payloadLabel, contentType, body.length);
-        }
-    }
-
-    /**
-     * Construit l'URI complète de la requête à logger, incluant la query string si
-     * elle est présente.
-     *
-     * @param request requête HTTP courante
-     * @return URI éventuellement enrichie de la query string
-     */
-    private String buildRequestUri(HttpServletRequest request) {
-        var queryString = request.getQueryString();
-        return !StringUtils.hasText(queryString) ? request.getRequestURI() : request.getRequestURI() + "?" + queryString;
-    }
 
 }

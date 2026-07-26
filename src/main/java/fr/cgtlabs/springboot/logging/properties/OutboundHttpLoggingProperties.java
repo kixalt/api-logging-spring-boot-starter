@@ -6,7 +6,7 @@ import lombok.Data;
 
 @ConfigurationProperties(prefix = "logging.outbound")
 @Data
-public class OutboundHttpLoggingProperties {
+public class OutboundHttpLoggingProperties implements HttpLoggingProperties {
 
     private int maxBodyLogBytes = 10 * 1024;
 

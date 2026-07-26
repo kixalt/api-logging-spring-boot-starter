@@ -12,7 +12,7 @@ import lombok.Data;
  */
 @ConfigurationProperties(prefix = "logging.inbound")
 @Data
-public final class InboundHttpLoggingProperties {
+public final class InboundHttpLoggingProperties implements HttpLoggingProperties {
 
     /**
      * Active ou désactive globalement la fonctionnalité de logging HTTP entrant.
