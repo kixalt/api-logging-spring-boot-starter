@@ -67,7 +67,7 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    implementation 'com.github.kixalt:api-logging-spring-boot-starter:1.0.0' // Replace with your desired version/tag
+    implementation 'com.github.kixalt:api-logging-spring-boot-starter:1.0.1' // Replace with your desired version/tag
 }
 ```
 
@@ -133,7 +133,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/users")
 class UserController {
 
-    @LoggedRestEndpoint
+    @LoggedRestEndpoint // add annotation
     @PostMapping("/search")
     ResponseEntity<String> search(@RequestBody String body) {
         return ResponseEntity.ok(body);
