@@ -2,14 +2,16 @@ package fr.cgtlabs.springboot.logging.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Configuration properties for anonymizing sensitive data in HTTP logs.
  * These properties define which headers and body fields should be masked.
  */
 @ConfigurationProperties(prefix = "logging.anonymize")
-@Data
+@Getter
+@Setter
 public final class AnonymizeProperties {
 
     /**

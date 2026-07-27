@@ -104,7 +104,7 @@ public class HttpLoggingService {
                 .field("Status", infoProvider.getResponseStatus())
                 .field("Duration", infoProvider.getElapsedTime() + " ms")
                 .field("URI", infoProvider.getUri());
-
+        appendHeader(builder, infoProvider.getResponseHeaders());
         appendResponseBody(builder, infoProvider.getResponseBody(), infoProvider.getResponseContentType());
     }
 

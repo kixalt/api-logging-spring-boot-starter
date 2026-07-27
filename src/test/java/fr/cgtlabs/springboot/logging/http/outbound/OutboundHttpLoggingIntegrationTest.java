@@ -1,7 +1,7 @@
 package fr.cgtlabs.springboot.logging.http.outbound;
 
-import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
-import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,10 +14,11 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers;
 import org.springframework.test.web.client.response.MockRestResponseCreators;
 import org.springframework.web.client.RestClient;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
+import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties;
 
 @ExtendWith(OutputCaptureExtension.class)
-public class OutboundHttpLoggingIntegrationTest {
+class OutboundHttpLoggingIntegrationTest {
 
     private RestClient.Builder restClient;
 
@@ -62,16 +63,16 @@ public class OutboundHttpLoggingIntegrationTest {
 
         mockServer.verify();
 
-        assertThat(output).contains("→ Outbound Request");
-        assertThat(output).contains("Caller   : my-method");
-        assertThat(output).contains("Method   : GET");
-        assertThat(output).contains("URI      : http://localhost:8080/api/resource");
-        assertThat(output).contains("Authorization: ***"); // Anonymized header
-        assertThat(output).contains("← Response Received");
-        assertThat(output).contains("Status   : 200");
-        assertThat(output).contains("Body (response, type=text/plain :");
-        assertThat(output).contains("response body");
-        assertThat(output).contains("Duration : ");
+        assertThat(output).contains("→ Outbound Request")
+        .contains("Caller   : my-method")
+        .contains("Method   : GET")
+        .contains("URI      : http://localhost:8080/api/resource")
+        .contains("Authorization: ***")
+        .contains("← Response Received")
+        .contains("Status   : 200")
+        .contains("Body (response, type=text/plain :")
+        .contains("response body")
+        .contains("Duration : ");
     }
 
     @Test
@@ -96,19 +97,19 @@ public class OutboundHttpLoggingIntegrationTest {
 
         mockServer.verify();
 
-        assertThat(output).contains("→ Outbound Request");
-        assertThat(output).contains("Caller   : my-method");
-        assertThat(output).contains("Method   : POST");
-        assertThat(output).contains("URI      : http://localhost:8080/api/data");
-        assertThat(output).contains("X-Secret-Header: ***"); // Anonymized header
-        assertThat(output).contains("Body (request, type=application/json :");
-        assertThat(output).contains("""
-                {"name":"test","password":"***"}"""); // Anonymized body field
-        assertThat(output).contains("← Response Received");
-        assertThat(output).contains("Status   : 200");
-        assertThat(output).contains("Body (response, type=application/json :");
-        assertThat(output).contains(responseBody);
-        assertThat(output).contains("Duration : ");
+        assertThat(output).contains("→ Outbound Request")
+        .contains("Caller   : my-method")
+        .contains("Method   : POST")
+        .contains("URI      : http://localhost:8080/api/data")
+        .contains("X-Secret-Header: ***")
+        .contains("Body (request, type=application/json :")
+        .contains("""
+                {"name":"test","password":"***"}""")
+        .contains("← Response Received")
+        .contains("Status   : 200")
+        .contains("Body (response, type=application/json :")
+        .contains(responseBody)
+        .contains("Duration : ");
     }
 
     @Test
@@ -142,23 +143,23 @@ public class OutboundHttpLoggingIntegrationTest {
 
         noBodyMockServer.verify();
 
-        assertThat(output).contains("→ Outbound Request");
-        assertThat(output).contains("Caller   : no-body-caller");
-        assertThat(output).contains("Method   : POST");
-        assertThat(output).contains("URI      : http://localhost:8080/api/no-body");
-        assertThat(output).doesNotContain("Body (request"); // Should not log request body
-        assertThat(output).contains("← Response Received");
-        assertThat(output).contains("Status   : 200");
-        assertThat(output).doesNotContain("Body (response"); // Should not log response body
+        assertThat(output).contains("→ Outbound Request")
+        .contains("Caller   : no-body-caller")
+        .contains("Method   : POST")
+        .contains("URI      : http://localhost:8080/api/no-body")
+        .doesNotContain("Body (request")
+        .contains("← Response Received")
+        .contains("Status   : 200")
+        .doesNotContain("Body (response");
     }
 
     @Test
     void testOutboundRequestWithMaxBodySizeExceeded(CapturedOutput output) {
         // Configure OutboundHttpLoggingProperties with a small max body size
         OutboundHttpLoggingProperties smallBodySizeProperties = new OutboundHttpLoggingProperties();
-        smallBodySizeProperties.setLogRequestBody(true); // Disable body logging
+        smallBodySizeProperties.setLogRequestBody(true);
         smallBodySizeProperties.setLogResponseBody(true);
-        smallBodySizeProperties.setMaxBodyLogBytes(20); // Max body size of 20 bytes to ensure truncation
+        smallBodySizeProperties.setMaxBodyLogBytes(20);
 
         RestClientLoggingInterceptor smallBodySizeInterceptor = new RestClientLoggingInterceptor("max-body-caller", new AnonymizeProperties(), smallBodySizeProperties);
 
@@ -184,11 +185,11 @@ public class OutboundHttpLoggingIntegrationTest {
 
         smallBodySizeMockServer.verify();
 
-        assertThat(output).contains("→ Outbound Request");
-        assertThat(output).contains("Caller   : max-body-caller");
-        assertThat(output).contains("Body (request, type=application/json :");
-        assertThat(output).contains("← Response Received");
-        assertThat(output).contains("Body (response, type=application/json :");
-        assertThat(output).contains("truncated to 0 KB"); // Assertion updated for 20 bytes / 1024 = 0 KB
+        assertThat(output).contains("→ Outbound Request")
+        .contains("Caller   : max-body-caller")
+        .contains("Body (request, type=application/json :")
+        .contains("← Response Received")
+        .contains("Body (response, type=application/json :")
+        .contains("truncated to 20 B");
     }
 }

@@ -2,13 +2,15 @@ package fr.cgtlabs.springboot.logging.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Configuration properties for outbound HTTP logging.
  */
 @ConfigurationProperties(prefix = "logging.outbound")
-@Data
+@Getter
+@Setter
 public class OutboundHttpLoggingProperties implements HttpLoggingProperties {
 
     /**

@@ -6,6 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+/**
+ * Spring Application to test
+ */
 @SpringBootApplication
 @ConfigurationPropertiesScan(basePackages = "fr.cgtlabs.springboot.logging.properties")
 @EnableConfigurationProperties({AnonymizeProperties.class, InboundHttpLoggingProperties.class})

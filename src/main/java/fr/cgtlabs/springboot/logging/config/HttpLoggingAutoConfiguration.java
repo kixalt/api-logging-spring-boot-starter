@@ -1,25 +1,26 @@
 package fr.cgtlabs.springboot.logging.config;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
 import fr.cgtlabs.springboot.logging.http.inbound.InboundHttpLoggingFilter;
 import fr.cgtlabs.springboot.logging.http.inbound.InboundHttpLoggingMvcConfigurer;
 import fr.cgtlabs.springboot.logging.http.inbound.LoggedRestEndpointInterceptor;
+import fr.cgtlabs.springboot.logging.http.outbound.RestClientLoggingInterceptorFactory;
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 import fr.cgtlabs.springboot.logging.properties.InboundHttpLoggingProperties;
-import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties; // Import added
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties; // Import added
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties;
 
 /**
  * Auto-configuration for inbound HTTP logging.
  * This class conditionally registers the inbound HTTP logging filter
  * and the associated MVC interceptor if the configuration properties allow it.
  */
-@Configuration
-@ConditionalOnProperty(prefix = "logging.inbound", name = "enabled", havingValue = "true")
+@AutoConfiguration
 @EnableConfigurationProperties({InboundHttpLoggingProperties.class, AnonymizeProperties.class, OutboundHttpLoggingProperties.class})
 public class HttpLoggingAutoConfiguration {
 
@@ -32,6 +33,7 @@ public class HttpLoggingAutoConfiguration {
      * @return A {@link FilterRegistrationBean} for the inbound logging filter.
      */
     @Bean
+    @ConditionalOnProperty(prefix = "logging.inbound", name = "enabled", havingValue = "true")
     public FilterRegistrationBean<InboundHttpLoggingFilter> inboundHttpLoggingFilterRegistration(
             InboundHttpLoggingProperties inboundHttpLoggingProperties,
             AnonymizeProperties anonymizeProperties) {
@@ -48,6 +50,7 @@ public class HttpLoggingAutoConfiguration {
      * @return An instance of {@link LoggedRestEndpointInterceptor}.
      */
     @Bean
+    @ConditionalOnProperty(prefix = "logging.inbound", name = "enabled", havingValue = "true")
     public LoggedRestEndpointInterceptor loggedRestEndpointInterceptor() {
         return new LoggedRestEndpointInterceptor();
     }
@@ -60,7 +63,22 @@ public class HttpLoggingAutoConfiguration {
      * @return An instance of {@link WebMvcConfigurer}.
      */
     @Bean
+    @ConditionalOnProperty(prefix = "logging.inbound", name = "enabled", havingValue = "true")
     public WebMvcConfigurer inboundHttpLoggingMvcConfigurer(LoggedRestEndpointInterceptor loggedRestEndpointInterceptor) {
         return new InboundHttpLoggingMvcConfigurer(loggedRestEndpointInterceptor);
+    }
+
+    /**
+     * Registers the {@link RestClientLoggingInterceptorFactory} as a Spring bean.
+     *
+     * @param anonymizeProperties Anonymization properties applied to outbound HTTP logs.
+     * @param outboundHttpLoggingProperties Outbound HTTP logging configuration properties.
+     * @return An instance of {@link RestClientLoggingInterceptorFactory}.
+     */
+    @Bean
+    public RestClientLoggingInterceptorFactory restClientLoggingInterceptorFactory(
+            AnonymizeProperties anonymizeProperties,
+            OutboundHttpLoggingProperties outboundHttpLoggingProperties) {
+        return new RestClientLoggingInterceptorFactory(anonymizeProperties, outboundHttpLoggingProperties);
     }
 }

@@ -5,13 +5,15 @@ import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Configuration properties for inbound HTTP logging.
  */
 @ConfigurationProperties(prefix = "logging.inbound")
-@Data
+@Getter
+@Setter
 public final class InboundHttpLoggingProperties implements HttpLoggingProperties {
 
     /**

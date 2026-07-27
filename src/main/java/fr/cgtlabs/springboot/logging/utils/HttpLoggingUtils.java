@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -59,7 +60,7 @@ public final class HttpLoggingUtils {
         var rawBody = new String(body, 0, limit, charset);
         var maskedBody = maskBody(rawBody, anonymizeProperties);
 
-        return truncated ? maskedBody + " [truncated to %d KB]".formatted(maxBodyLogBytes / 1024) : maskedBody;
+        return truncated ? maskedBody + " [truncated to %d B]".formatted(maxBodyLogBytes ) : maskedBody;
     }
 
     /**
@@ -71,7 +72,7 @@ public final class HttpLoggingUtils {
      * @return multi-line string representing the headers
      */
     public static List<String> buildHeadersLog(HttpHeaders headers, AnonymizeProperties anonymizeProperties) {
-        var toMask = Arrays.stream(anonymizeProperties.getHeaders()).filter(Objects::nonNull).map(String::toLowerCase).toList();
+        var toMask = Arrays.stream(anonymizeProperties.getHeaders()).filter(Objects::nonNull).map(String::toLowerCase).collect(Collectors.toSet());
 
         var anonymizedHeaders = new ArrayList<String>();
         headers.forEach((name, values) -> values.forEach(val -> {

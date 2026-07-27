@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
  * This factory ensures that each interceptor is created with the necessary
  * logging and anonymization properties.
  */
-@Component
 public class RestClientLoggingInterceptorFactory {
 
     private final AnonymizeProperties anonymizeProperties;

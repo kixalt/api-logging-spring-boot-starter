@@ -10,9 +10,9 @@ import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 
+import fr.cgtlabs.springboot.logging.http.service.HttpLoggingService;
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 import fr.cgtlabs.springboot.logging.properties.OutboundHttpLoggingProperties;
-import fr.cgtlabs.springboot.logging.http.service.HttpLoggingService;
 
 /**
  * Interceptor for logging outbound HTTP calls made via {@code RestClient}.
@@ -30,7 +30,9 @@ import fr.cgtlabs.springboot.logging.http.service.HttpLoggingService;
  *   <li>optional logging of request and response bodies;</li>
  *   <li>anonymization of sensitive headers;</li>
  *   <li>anonymization of sensitive fields in textual payloads;</li>
- *   <li>size limitation of logged bodies.</li>
+ *   <li>size limitation of logged bodies;</li>
+ *   <li>buffering of the HTTP response body so it can be logged without
+ *       preventing downstream consumers from reading it.</li>
  * </ul>
  * <p>
  * This class is not intended to be instantiated directly from outside
@@ -67,10 +69,12 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
      * The processing follows these steps:
      * </p>
      * <ol>
-     *   <li>logging of the outbound request;</li>
-     *   <li>actual execution of the request;</li>
+     *   <li>execution of the outbound request;</li>
+     *   <li>buffering of the received response body;</li>
      *   <li>measurement of execution time;</li>
-     *   <li>logging of the received response if available.</li>
+     *   <li>logging of the HTTP exchange using the buffered response;</li>
+     *   <li>return of a buffered response wrapper so the response body remains
+     *       readable by downstream consumers.</li>
      * </ol>
      * <p>
      * In case of an I/O error during execution, the exception is propagated
@@ -80,21 +84,23 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
      * @param request outbound HTTP request
      * @param body request body as binary data
      * @param execution executor provided by Spring to continue the chain
-     * @return the HTTP response returned by the remote server
+     * @return a buffered HTTP response that can be consumed after logging
      * @throws IOException if an I/O error occurs during the HTTP call
      */
     @Override
     public ClientHttpResponse intercept(@NonNull HttpRequest request, byte @NonNull [] body, ClientHttpRequestExecution execution) throws IOException {
 
         long start = System.currentTimeMillis();
-        ClientHttpResponse response = null;
+        ClientHttpResponse response;
+        ClientHttpResponse responseToReturn = null;
         try {
             response = execution.execute(request, body);
-            return response;
+            responseToReturn = new BufferedClientHttpResponse(response);
+            return responseToReturn;
         } finally {
-            if (response != null && LOG.isInfoEnabled()) {
+            if (responseToReturn != null && LOG.isInfoEnabled()) {
                 long elapsed = System.currentTimeMillis() - start;
-                var infoProvider = new OutboundHttpExchangeInfoProvider(request, body, response, callerName, elapsed);
+                var infoProvider = new OutboundHttpExchangeInfoProvider(request, body, responseToReturn, callerName, elapsed);
                 LOG.info(httpLoggingService.buildExchangeLog(infoProvider));
             }
         }

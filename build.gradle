@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'fr.cgtlabs'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.1-SNAPSHOT'
 
 java {
 	toolchain {
@@ -45,16 +45,14 @@ bootJar {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        create('mavenJava', MavenPublication) {
             from components.java
             versionMapping {
-                allVariants {
-                    usage('java-api') {
-                        fromResolutionOf('runtimeClasspath')
-                    }
-                    usage('java-runtime') {
-                        fromResolutionOf('runtimeClasspath')
-                    }
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
                 }
             }
         }
@@ -67,19 +65,19 @@ jacoco {
 
 tasks.named('test') {
 	useJUnitPlatform()
-    finalizedBy 'jacocoTestReport' // Ensure JaCoCo report is generated after tests
+    finalizedBy 'jacocoTestReport'
 }
 
-tasks.named('jacocoTestReport', JacocoReport) { // Configure the existing task
-    dependsOn tasks.test // Ensure tests are run before report generation
+tasks.named('jacocoTestReport', JacocoReport) {
+    dependsOn tasks.test
     reports {
-        xml.required = true // For Codecov
+        xml.required = true
         csv.required = false
         html.required = true
     }
 
     classDirectories.setFrom(
-            fileTree(layout.buildDirectory.dir('classes/java/main')) // Include all compiled classes from main
+            fileTree(layout.buildDirectory.dir('classes/java/main'))
     )
 
     sourceDirectories.setFrom(files(

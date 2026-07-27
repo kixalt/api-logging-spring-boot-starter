@@ -1,5 +1,10 @@
 package fr.cgtlabs.springboot.logging.http.inbound;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,16 +16,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
 @ActiveProfiles("test")
-public class HttpLoggingIntegrationTest {
+class HttpLoggingIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,14 +32,14 @@ public class HttpLoggingIntegrationTest {
                 ))
                 .andExpect(status().isOk());
 
-        assertThat(output).contains("→ Inbound Request");
-        assertThat(output).contains("Method   : GET");
-        assertThat(output).contains("URI      : /test/logged-get");
-        assertThat(output).contains("authentication: ***");
-        assertThat(output).contains("← Response Sent");
-        assertThat(output).contains("Status   : 200");
-        assertThat(output).contains("Body (response, type=text/plain;charset=UTF-8 :");
-        assertThat(output).contains("Logged GET response");
+        assertThat(output).contains("→ Inbound Request")
+        .contains("Method   : GET")
+        .contains("URI      : /test/logged-get")
+        .contains("authentication: ***")
+        .contains("← Response Sent")
+        .contains("Status   : 200")
+        .contains("Body (response, type=text/plain;charset=UTF-8 :")
+        .contains("Logged GET response");
     }
 
     @Test
@@ -54,16 +54,16 @@ public class HttpLoggingIntegrationTest {
                         .content(requestBodyJson))
                 .andExpect(status().isOk());
 
-        assertThat(output).contains("→ Inbound Request");
-        assertThat(output).contains("Method   : POST");
-        assertThat(output).contains("URI      : /test/logged-post");
-        assertThat(output).contains("authentication: ***");
-        assertThat(output).contains("Body (request, type=application/json :");
-        assertThat(output).contains(requestBodyJson);
-        assertThat(output).contains("← Response Sent");
-        assertThat(output).contains("Status   : 200");
-        assertThat(output).contains("Body (response, type=application/json :");
-        assertThat(output).contains("Logged POST received");
+        assertThat(output).contains("→ Inbound Request")
+        .contains("Method   : POST")
+        .contains("URI      : /test/logged-post")
+        .contains("authentication: ***")
+        .contains("Body (request, type=application/json :")
+        .contains(requestBodyJson)
+        .contains("← Response Sent")
+        .contains("Status   : 200")
+        .contains("Body (response, type=application/json :")
+        .contains("Logged POST received");
     }
 
     @Test
@@ -71,7 +71,7 @@ public class HttpLoggingIntegrationTest {
         mockMvc.perform(get("/test/unlogged-get"))
                 .andExpect(status().isOk());
 
-        assertThat(output).doesNotContain("→ Inbound Request");
-        assertThat(output).doesNotContain("← Response Sent");
+        assertThat(output).doesNotContain("→ Inbound Request")
+        .doesNotContain("← Response Sent");
     }
 }
