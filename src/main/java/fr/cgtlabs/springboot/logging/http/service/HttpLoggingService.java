@@ -1,29 +1,45 @@
 package fr.cgtlabs.springboot.logging.http.service;
 
-import fr.cgtlabs.springboot.logging.http.common.HttpExchangeInfoProvider;
+import java.io.IOException;
+import java.util.Set;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import dev.blaauwendraad.masker.json.JsonMasker;
+import dev.blaauwendraad.masker.json.config.JsonMaskingConfig;
+import dev.blaauwendraad.masker.json.config.KeyMaskingConfig;
 import fr.cgtlabs.springboot.logging.http.common.Direction;
+import fr.cgtlabs.springboot.logging.http.common.HttpExchangeInfoProvider;
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 import fr.cgtlabs.springboot.logging.properties.HttpLoggingProperties;
 import fr.cgtlabs.springboot.logging.utils.HttpExchangeLogBuilder;
 import fr.cgtlabs.springboot.logging.utils.HttpLoggingUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-
-import java.io.IOException;
 
 /**
  * HTTP logging service that centralizes the logic for building log messages
  * for both inbound and outbound HTTP exchanges.
- * It uses an {@link HttpExchangeInfoProvider} to obtain exchange details
- * and {@link HttpLoggingProperties} to determine what should be logged.
+ * <p>
+ * It uses an {@link HttpExchangeInfoProvider} to obtain exchange details,
+ * {@link HttpLoggingProperties} to determine what should be logged, and
+ * {@link AnonymizeProperties} to anonymize headers. It also builds a single
+ * {@link JsonMasker} instance at construction time so configured JSON fields
+ * can be masked efficiently in logged textual bodies.
+ * </p>
  */
 public class HttpLoggingService {
 
     private final HttpLoggingProperties properties;
     private final AnonymizeProperties anonymizeProperties;
+    private final JsonMasker jsonMasker;
 
     /**
      * Constructs a new instance of {@code HttpLoggingService}.
+     * <p>
+     * A dedicated {@link JsonMasker} is initialized once from the anonymization
+     * configuration and then reused for all logged JSON payloads handled by this
+     * service instance.
+     * </p>
      *
      * @param properties          The configuration properties for HTTP logging.
      * @param anonymizeProperties The configuration properties for anonymizing sensitive data in logs.
@@ -31,6 +47,14 @@ public class HttpLoggingService {
     public HttpLoggingService(HttpLoggingProperties properties, AnonymizeProperties anonymizeProperties) {
         this.properties = properties;
         this.anonymizeProperties = anonymizeProperties;
+
+        var mask = anonymizeProperties.getAnonymizedString();
+        var config = KeyMaskingConfig.builder().maskBooleansWith(mask).maskNumbersWith(mask).maskStringsWith(mask).build();
+        this.jsonMasker = JsonMasker.getMasker(
+                JsonMaskingConfig.builder()
+                        .maskKeys(Set.of(anonymizeProperties.getBody()), config)
+                        .build()
+        );
     }
 
     /**
@@ -126,9 +150,9 @@ public class HttpLoggingService {
      * Appends the HTTP response body to the log builder, if response body logging
      * is enabled and the response body is not empty.
      *
-     * @param builder     The HTTP log block builder.
+     * @param builder      The HTTP log block builder.
      * @param responseBody The response body.
-     * @param contentType The content type of the response.
+     * @param contentType  The content type of the response.
      */
     private void appendResponseBody(HttpExchangeLogBuilder builder, byte[] responseBody, MediaType contentType) {
         if (properties.isLogResponseBody() && responseBody != null && responseBody.length > 0) {
@@ -138,9 +162,13 @@ public class HttpLoggingService {
 
     /**
      * Appends an HTTP message body (request or response) to the log builder.
-     * If the content type is loggable (e.g., text, JSON, XML), the content is extracted,
-     * formatted, and potentially anonymized before being added.
+     * <p>
+     * If the content type is loggable (for example JSON, XML, form data, or text),
+     * the body is converted to text and truncated according to the configured limit.
+     * JSON payloads are additionally masked with the reusable {@link #jsonMasker}
+     * through {@link HttpLoggingUtils#getMaskedAndTruncatedBody(byte[], MediaType, int, JsonMasker)}.
      * Otherwise, only the content type and body size are logged.
+     * </p>
      *
      * @param builder      The HTTP log block builder.
      * @param payloadLabel The functional label of the logged payload (e.g., "request", "response").
@@ -149,10 +177,11 @@ public class HttpLoggingService {
      */
     private void appendBody(HttpExchangeLogBuilder builder, String payloadLabel, byte[] body, MediaType contentType) {
         if (HttpLoggingUtils.isLoggableContentType(contentType)) {
-            var formattedBody = HttpLoggingUtils.extractTextBody(body, contentType, properties.getMaxBodyLogBytes(), anonymizeProperties);
-            builder.body(payloadLabel, contentType, formattedBody);
+            var maskedAndTruncatedBody = HttpLoggingUtils.getMaskedAndTruncatedBody(body, contentType, properties.getMaxBodyLogBytes(), jsonMasker);
+            builder.body(payloadLabel, contentType, maskedAndTruncatedBody);
         } else {
             builder.ignoredBody(payloadLabel, contentType, body.length);
         }
     }
+
 }

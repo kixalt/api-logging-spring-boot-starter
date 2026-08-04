@@ -5,6 +5,7 @@ logging:
     log-headers: true
     log-request-body: true
     log-response-body: true
+    max-body-log-bytes: 10240
   anonymize:
     body:
     headers:

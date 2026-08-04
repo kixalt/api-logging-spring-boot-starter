@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'fr.cgtlabs'
-version = '1.0.1-SNAPSHOT'
+version = '1.0.2-SNAPSHOT'
 
 java {
 	toolchain {
@@ -26,6 +26,9 @@ dependencies {
 
 	annotationProcessor 'org.projectlombok:lombok:1.18.42'
 	compileOnly 'org.projectlombok:lombok:1.18.42'
+
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'dev.blaauwendraad:json-masker:1.1.4'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

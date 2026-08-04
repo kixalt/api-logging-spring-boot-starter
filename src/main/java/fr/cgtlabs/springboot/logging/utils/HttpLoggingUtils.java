@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
+import dev.blaauwendraad.masker.json.JsonMasker;
 import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
 
 /**
@@ -18,8 +18,8 @@ import fr.cgtlabs.springboot.logging.properties.AnonymizeProperties;
  * <p>
  * This class centralizes common logging logic for both outbound
  * and inbound HTTP calls: determining loggable content types,
- * extracting a truncated textual body, and anonymizing sensitive headers
- * and fields present in payloads.
+ * extracting textual bodies for logging, anonymizing sensitive headers,
+ * and applying a preconfigured JSON masker when available.
  * </p>
  */
 public final class HttpLoggingUtils {
@@ -36,70 +36,62 @@ public final class HttpLoggingUtils {
      */
     public static boolean isLoggableContentType(MediaType contentType) {
         return contentType != null && (contentType.isCompatibleWith(MediaType.APPLICATION_JSON)
-                        || contentType.isCompatibleWith(MediaType.APPLICATION_XML)
-                        || contentType.isCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED)
-                        || "text".equalsIgnoreCase(contentType.getType()));
+                || contentType.isCompatibleWith(MediaType.APPLICATION_XML)
+                || contentType.isCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED)
+                || "text".equalsIgnoreCase(contentType.getType()));
 
     }
 
+
     /**
-     * Converts a binary body to text, applies anonymization, then truncates the
-     * result if the maximum log size is exceeded.
+     * Converts a body to text after applying content-aware masking and truncation.
+     * <p>
+     * When the content type is compatible with {@code application/json}, the body is
+     * masked with the provided preconfigured {@link JsonMasker}. This masker is expected
+     * to have been built once by the caller using the configured sensitive field names
+     * and replacement rules. For other textual content types, the body is left unchanged
+     * and only truncated if it exceeds the configured limit.
+     * </p>
      *
-     * @param body HTTP body as bytes
-     * @param contentType HTTP content type
+     * @param body            HTTP body as bytes
+     * @param contentType     HTTP content type
      * @param maxBodyLogBytes maximum body size retained for logging
-     * @param anonymizeProperties anonymization properties
-     * @return converted, anonymized, and potentially truncated body
+     * @param masker          preconfigured JSON masker, or {@code null} if JSON masking is disabled
+     * @return masked and potentially truncated body as text
      */
-    public static String extractTextBody(byte[] body, MediaType contentType, int maxBodyLogBytes, AnonymizeProperties anonymizeProperties) {
-        boolean truncated = body.length > maxBodyLogBytes;
-        int limit = truncated ? maxBodyLogBytes : body.length;
-
-        var charset = contentType != null && contentType.getCharset() != null ? contentType.getCharset() : StandardCharsets.UTF_8;
-        var rawBody = new String(body, 0, limit, charset);
-        var maskedBody = maskBody(rawBody, anonymizeProperties);
-
-        return truncated ? maskedBody + " [truncated to %d B]".formatted(maxBodyLogBytes ) : maskedBody;
+    public static String getMaskedAndTruncatedBody(byte[] body, MediaType contentType, int maxBodyLogBytes, JsonMasker masker) {
+        var charset = contentType.getCharset() != null ? contentType.getCharset() : StandardCharsets.UTF_8;
+        var formattedBody = body;
+        if (null != masker && contentType.isCompatibleWith(MediaType.APPLICATION_JSON)) {
+            formattedBody = masker.mask(body);
+        }
+        boolean truncated = formattedBody.length > maxBodyLogBytes;
+        int limit = truncated ? maxBodyLogBytes : formattedBody.length;
+        return new String(formattedBody, 0, limit, charset);
     }
 
     /**
      * Builds a multi-line textual representation of HTTP headers
      * by applying the configured anonymization.
      *
-     * @param headers HTTP headers to log
+     * @param headers             HTTP headers to log
      * @param anonymizeProperties anonymization properties
      * @return multi-line string representing the headers
      */
     public static List<String> buildHeadersLog(HttpHeaders headers, AnonymizeProperties anonymizeProperties) {
-        var toMask = Arrays.stream(anonymizeProperties.getHeaders()).filter(Objects::nonNull).map(String::toLowerCase).collect(Collectors.toSet());
+        var toMask = Arrays.stream(anonymizeProperties.getHeaders())
+                .filter(Objects::nonNull)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
 
         var anonymizedHeaders = new ArrayList<String>();
-        headers.forEach((name, values) -> values.forEach(val -> {
+        headers.forEach((name, values) -> values.forEach(value -> {
             boolean anonymize = toMask.contains(name.toLowerCase());
-            anonymizedHeaders.add(name + ": " + (anonymize ? anonymizeProperties.getAnonymizedString() : val));
+            anonymizedHeaders.add(name + ": " + (anonymize ? anonymizeProperties.getAnonymizedString() : value));
         }));
-
         return anonymizedHeaders;
     }
 
-    /**
-     * Masks configured sensitive fields in a textual body.
-     *
-     * @param body textual body to anonymize
-     * @param anonymizeProperties anonymization properties
-     * @return anonymized body, or the original value if no masking applies
-     */
-    public static String maskBody(String body, AnonymizeProperties anonymizeProperties) {
-        if (body != null && !body.isBlank()) {
-            String[] configuredFields = anonymizeProperties.getBody();
-            if (configuredFields != null && configuredFields.length > 0) {
-                return buildBodyPattern(configuredFields).matcher(body).replaceAll("$1\"" + anonymizeProperties.getAnonymizedString() + "\"");
-            }
-        }
-
-        return body;
-    }
 
     /**
      * Attempts to parse a raw {@code Content-Type} header value into
@@ -112,24 +104,11 @@ public final class HttpLoggingUtils {
         if (contentType != null && !contentType.isBlank()) {
             try {
                 return MediaType.parseMediaType(contentType);
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException _) {
                 return null;
             }
         }
-
         return null;
     }
 
-    /**
-     * Builds the regular expression used to detect fields to mask
-     * in logged textual bodies.
-     *
-     * @param configuredFields names of sensitive fields to target
-     * @return compiled regex pattern
-     */
-    public static Pattern buildBodyPattern(String[] configuredFields) {
-        String fields = String.join("|", configuredFields);
-        String regex = "(?i)(\"(?:%s)\"\\s*:\\s*)(?:\"[^\"]*\"|\\d+|true|false|null|\\[[^\\]]*\\])".formatted(fields);
-        return Pattern.compile(regex);
-    }
 }

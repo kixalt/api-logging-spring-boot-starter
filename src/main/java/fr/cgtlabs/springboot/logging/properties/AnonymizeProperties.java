@@ -21,8 +21,12 @@ public final class AnonymizeProperties {
     private String[] headers = new String[0];
 
     /**
-     * An array of JSON/XML field names whose values should be anonymized in the logs.
-     * These fields are matched using JSONPath for JSON and XPath for XML.
+     * An array of sensitive field names whose values should be anonymized in
+     * logged textual bodies.
+     * <p>
+     * Matching is currently performed with a case-insensitive regular expression
+     * against JSON-like textual payloads. It is not based on JSONPath or XPath.
+     * </p>
      */
     private String[] body = new String[0];
 

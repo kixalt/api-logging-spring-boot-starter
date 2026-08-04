@@ -5,7 +5,7 @@ Spring Boot Starter to centralize HTTP logging:
 
 - **Inbound** for Spring MVC, with opt-in via annotation on endpoints; ➡️
 - **Outbound** for `RestClient`, with interception of external calls; ⬅️
-- **Anonymization** of sensitive headers and fields in bodies. 🔒
+- **Anonymization** of sensitive headers and configured JSON fields in textual bodies. 🔒
 
 ## Features ✨
 
@@ -20,7 +20,7 @@ This project provides a logging infrastructure for calls received by a Spring MV
 - Support for logging headers;
 - Support for logging request/response bodies;
 - Limitation of logged body size;
-- Anonymization of sensitive data. 🔒
+- Anonymization of sensitive headers and masking of configured JSON fields. 🔒
 
 ### Outbound HTTP Logging ⬅️
 The project also exposes an interceptor for calls made with `RestClient`:
@@ -28,7 +28,7 @@ The project also exposes an interceptor for calls made with `RestClient`:
 - Logging of HTTP method, URI, headers, and bodies;
 - Grouping of request and response in a single log block per exchange;
 - Execution time measurement; ⏱️
-- Anonymization of sensitive headers and fields; 🔒
+- Anonymization of sensitive headers and masking of configured JSON fields; 🔒
 - Limitation of logged body size;
 - Support for common textual content types.
 
@@ -55,6 +55,7 @@ The project relies notably on:
 
 - `spring-boot-starter-webmvc`
 - `spring-boot-starter-restclient`
+- `dev.blaauwendraad.masker.json:json-masker` for JSON body masking
 
 ### Via JitPack
 
@@ -103,6 +104,10 @@ logging:
       - secret
     anonymized-string: "***"
 ```
+
+`logging.anonymize.body` contains JSON field names to mask in logged payloads.
+When the content type is `application/json`, masking is handled with `JsonMasker`.
+For other textual payloads, no structured body masking is currently applied.
 
 ### Outbound Logging
 
@@ -232,7 +237,8 @@ The Spring Boot import file is located in:
 
 ## Limitations and Considerations ⚠️
 
-- Body masking relies on regex;
+- Structured body masking is currently applied only to `application/json` payloads via `JsonMasker`;
+- XML and other non-JSON textual payloads are logged as text but are not structurally masked;
 - Binary bodies are not displayed;
 - Large bodies are truncated;
 - Inbound logging relies on `ContentCaching*` wrappers;
@@ -270,4 +276,4 @@ This starter provides a reusable HTTP logging foundation for Spring Boot with:
 - **Opt-in inbound logging** for Spring MVC controllers;
 - **Outbound logging** for `RestClient`;
 - **Centralized configuration**;
-- **Integrated anonymization** to limit sensitive data exposure.
+- **Integrated anonymization** of headers and configured JSON fields to limit sensitive data exposure.

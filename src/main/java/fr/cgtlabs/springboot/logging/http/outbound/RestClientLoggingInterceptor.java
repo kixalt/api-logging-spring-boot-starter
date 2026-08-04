@@ -51,10 +51,10 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
     /**
      * Constructs an outbound HTTP logging interceptor associated with an explicit caller.
      *
-     * @param callerName logical name of the component originating the HTTP call
-     *                   (e.g., a business class, a facade, or an external client)
-     * @param anonymizeProperties properties defining headers and body fields
-     *                            to be masked in logs
+     * @param callerName            logical name of the component originating the HTTP call
+     *                              (e.g., a business class, a facade, or an external client)
+     * @param anonymizeProperties   properties defining headers and body fields
+     *                              to be masked in logs
      * @param httpLoggingProperties properties controlling outbound logging
      *                              (headers, bodies, maximum logged size)
      */
@@ -81,26 +81,24 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
      * as is to the caller.
      * </p>
      *
-     * @param request outbound HTTP request
-     * @param body request body as binary data
+     * @param request   outbound HTTP request
+     * @param bodyRequest      request body as binary data
      * @param execution executor provided by Spring to continue the chain
      * @return a buffered HTTP response that can be consumed after logging
      * @throws IOException if an I/O error occurs during the HTTP call
      */
     @Override
-    public ClientHttpResponse intercept(@NonNull HttpRequest request, byte @NonNull [] body, ClientHttpRequestExecution execution) throws IOException {
+    public @NonNull ClientHttpResponse intercept(@NonNull HttpRequest request, byte @NonNull [] bodyRequest, @NonNull ClientHttpRequestExecution execution) throws IOException {
 
         long start = System.currentTimeMillis();
-        ClientHttpResponse response;
         ClientHttpResponse responseToReturn = null;
-        try {
-            response = execution.execute(request, body);
+        try (ClientHttpResponse response = execution.execute(request, bodyRequest)) {
             responseToReturn = new BufferedClientHttpResponse(response);
             return responseToReturn;
         } finally {
             if (responseToReturn != null && LOG.isInfoEnabled()) {
                 long elapsed = System.currentTimeMillis() - start;
-                var infoProvider = new OutboundHttpExchangeInfoProvider(request, body, responseToReturn, callerName, elapsed);
+                var infoProvider = new OutboundHttpExchangeInfoProvider(request, bodyRequest, responseToReturn, callerName, elapsed);
                 LOG.info(httpLoggingService.buildExchangeLog(infoProvider));
             }
         }
