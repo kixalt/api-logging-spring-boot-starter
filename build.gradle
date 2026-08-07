@@ -1,39 +1,41 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '4.1.0'
-	id 'io.spring.dependency-management' version '1.1.7'
-	id 'maven-publish'
+    id 'java'
+    id 'org.springframework.boot' version '4.1.0'
+    id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+    id "io.github.sgtsilvio.gradle.maven-central-publishing" version "0.5.0"
+    id "io.github.sgtsilvio.gradle.metadata" version "0.7.0"
 }
 
-group = 'fr.cgtlabs'
-version = '1.0.2-SNAPSHOT'
+group = 'io.github.kixalt'
+version = '1.0.2'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(25)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withJavadocJar()
+    withSourcesJar()
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-restclient'
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation 'org.springframework.boot:spring-boot-starter-restclient'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	annotationProcessor 'org.projectlombok:lombok:1.18.42'
-	compileOnly 'org.projectlombok:lombok:1.18.42'
-
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+    compileOnly 'org.projectlombok:lombok:1.18.42'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'dev.blaauwendraad:json-masker:1.1.4'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 
@@ -58,8 +60,49 @@ publishing {
                     fromResolutionResult()
                 }
             }
+            // Votre bloc POM existant
+            pom {
+                name = 'API Logging Spring Boot Starter'
+                description = 'A Spring Boot Starter for API logging.'
+                url = 'https://github.com/kixalt/api-logging-spring-boot-starter'
+                licenses {
+                    license {
+                        name = 'Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'kixalt'
+                        name = 'Cedric Guillot'
+                        email = 'cedric.guillot29@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git://github.com:kixalt/api-logging-spring-boot-starter.git'
+                    developerConnection = 'scm:git:ssh://github.com:kixalt/api-logging-spring-boot-starter.git'
+                    url = 'https://github.com/kixalt/api-logging-spring-boot-starter'
+                }
+            }
         }
     }
+}
+
+// Bloc de signature mis à jour
+afterEvaluate {
+    signing {
+        def signingKeyFile = file('signing.key')
+        def signingKey = signingKeyFile.exists() ? signingKeyFile.text : null
+        def signingPassword = findProperty("signingPassword") as String
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign publishing.publications.mavenJava
+    }
+}
+
+// Configure Javadoc task to not fail on errors
+tasks.withType(Javadoc).configureEach {
+    options.addStringOption('Xdoclint:none', '-quiet')
+    failOnError = false
 }
 
 jacoco {
@@ -67,7 +110,7 @@ jacoco {
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
     finalizedBy 'jacocoTestReport'
 }
 
