@@ -68,7 +68,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'fr.cgtlabs:api-logging-spring-boot-starter:1.0.1' // Replace with your desired version
+    implementation 'fr.cgtlabs:api-logging-spring-boot-starter:1.0.2' // Replace with your desired version
 }
 ```
 
