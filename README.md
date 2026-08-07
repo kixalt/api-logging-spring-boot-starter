@@ -57,20 +57,22 @@ The project relies notably on:
 - `spring-boot-starter-restclient`
 - `dev.blaauwendraad.masker.json:json-masker` for JSON body masking
 
-### Via JitPack
+### Via Gradle
 
-To use this library in your project, add JitPack to your `build.gradle` file and then add the dependency:
+To use this library in your project, add the dependency to your `build.gradle` file:
 
 ```gradle
 // build.gradle
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
 }
+
 dependencies {
-    implementation 'com.github.kixalt:api-logging-spring-boot-starter:1.0.1' // Replace with your desired version/tag
+    implementation 'fr.cgtlabs:api-logging-spring-boot-starter:1.0.1' // Replace with your desired version
 }
 ```
+
+> No JitPack repository is required anymore.
 
 ## Configuration 💻
 
