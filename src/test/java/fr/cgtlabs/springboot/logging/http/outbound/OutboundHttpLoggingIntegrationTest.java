@@ -190,6 +190,6 @@ class OutboundHttpLoggingIntegrationTest {
         .contains("Body (request, type=application/json :")
         .contains("← Response Received")
         .contains("Body (response, type=application/json :")
-        .contains("truncated to 20 B");
+        .contains("[truncated]");
     }
 }

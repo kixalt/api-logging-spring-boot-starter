@@ -67,7 +67,7 @@ public final class HttpLoggingUtils {
         }
         boolean truncated = formattedBody.length > maxBodyLogBytes;
         int limit = truncated ? maxBodyLogBytes : formattedBody.length;
-        return new String(formattedBody, 0, limit, charset);
+        return new String(formattedBody, 0, limit, charset) + (truncated ? " [truncated]" : "");
     }
 
     /**

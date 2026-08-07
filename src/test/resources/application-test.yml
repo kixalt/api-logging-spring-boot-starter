@@ -8,5 +8,6 @@ logging:
     max-body-log-bytes: 10240
   anonymize:
     body:
+      - secret
     headers:
       - authentication

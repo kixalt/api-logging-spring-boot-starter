@@ -50,11 +50,11 @@ public class HttpLoggingService {
 
         var mask = anonymizeProperties.getAnonymizedString();
         var config = KeyMaskingConfig.builder().maskBooleansWith(mask).maskNumbersWith(mask).maskStringsWith(mask).build();
-        this.jsonMasker = JsonMasker.getMasker(
+        this.jsonMasker = anonymizeProperties.getBody().length > 0 ? JsonMasker.getMasker(
                 JsonMaskingConfig.builder()
                         .maskKeys(Set.of(anonymizeProperties.getBody()), config)
                         .build()
-        );
+        ) : null;
     }
 
     /**

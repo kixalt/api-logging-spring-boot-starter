@@ -33,19 +33,22 @@ class HttpLoggingIntegrationTest {
                 .andExpect(status().isOk());
 
         assertThat(output).contains("→ Inbound Request")
-        .contains("Method   : GET")
-        .contains("URI      : /test/logged-get")
-        .contains("authentication: ***")
-        .contains("← Response Sent")
-        .contains("Status   : 200")
-        .contains("Body (response, type=text/plain;charset=UTF-8 :")
-        .contains("Logged GET response");
+                .contains("Method   : GET")
+                .contains("URI      : /test/logged-get")
+                .contains("authentication: ***")
+                .contains("← Response Sent")
+                .contains("Status   : 200")
+                .contains("Body (response, type=text/plain;charset=UTF-8 :")
+                .contains("Logged GET response");
     }
 
     @Test
     void testLoggedPostRequest(CapturedOutput output) throws Exception {
         String requestBodyJson = """
-                {"data":"some data","secret":"my_secret_value"}""";
+                                {
+                  "data": "some data",
+                  "secret": "my_secret_value"
+                }""";
 
         mockMvc.perform(post("/test/logged-post").
                         headers(
@@ -55,15 +58,15 @@ class HttpLoggingIntegrationTest {
                 .andExpect(status().isOk());
 
         assertThat(output).contains("→ Inbound Request")
-        .contains("Method   : POST")
-        .contains("URI      : /test/logged-post")
-        .contains("authentication: ***")
-        .contains("Body (request, type=application/json :")
-        .contains(requestBodyJson)
-        .contains("← Response Sent")
-        .contains("Status   : 200")
-        .contains("Body (response, type=application/json :")
-        .contains("Logged POST received");
+                .contains("Method   : POST")
+                .contains("URI      : /test/logged-post")
+                .contains("authentication: ***")
+                .contains("Body (request, type=application/json :")
+                .contains(requestBodyJson.replace("my_secret_value", "***"))
+                .contains("← Response Sent")
+                .contains("Status   : 200")
+                .contains("Body (response, type=application/json :")
+                .contains("Logged POST received");
     }
 
     @Test
@@ -72,6 +75,6 @@ class HttpLoggingIntegrationTest {
                 .andExpect(status().isOk());
 
         assertThat(output).doesNotContain("→ Inbound Request")
-        .doesNotContain("← Response Sent");
+                .doesNotContain("← Response Sent");
     }
 }
